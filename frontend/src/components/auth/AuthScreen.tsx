@@ -16,18 +16,18 @@ export function AuthScreen({
   children: ReactNode;
 }) {
   return (
-    <div className="h-dvh overflow-hidden bg-[#e6eaf2] dark:bg-[#10131c] sm:flex sm:items-center sm:justify-center sm:p-4">
+    <div className="min-h-svh bg-[#e6eaf2] dark:bg-[#10131c] sm:flex sm:h-svh sm:items-center sm:justify-center sm:overflow-hidden sm:p-4">
       <div
         className={cn(
-          'relative flex h-full w-full flex-col overflow-hidden px-7 py-4',
+          'relative flex min-h-svh w-full flex-col px-7 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]',
           'bg-[linear-gradient(180deg,#d7e4ff_0%,#eef3ff_24%,#f6f8fc_58%,#f4f6fb_100%)]',
           'dark:bg-[linear-gradient(180deg,#1a2440_0%,#141a2c_40%,#10131c_100%)]',
-          'sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-[430px] sm:rounded-[2.25rem] sm:border sm:border-white/80 sm:px-7 sm:py-5',
+          'sm:h-auto sm:min-h-0 sm:max-h-[calc(100svh-2rem)] sm:max-w-[430px] sm:overflow-hidden sm:rounded-[2.25rem] sm:border sm:border-white/80 sm:px-7 sm:py-5',
           'sm:shadow-[0_28px_70px_-24px_rgba(20,20,20,0.45),0_10px_28px_-16px_rgba(20,20,20,0.18)]',
           'dark:sm:border-white/10'
         )}
       >
-        <ThemeToggle className="absolute right-3 top-3 z-10 text-stone-500 hover:bg-white/70 dark:text-stone-300 dark:hover:bg-white/10" />
+        <ThemeToggle className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 text-stone-500 hover:bg-white/70 dark:text-stone-300 dark:hover:bg-white/10" />
 
         <div className="flex min-h-0 flex-1 flex-col justify-center">
           <div className="mb-3 flex flex-col items-center">

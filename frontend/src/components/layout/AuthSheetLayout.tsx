@@ -10,7 +10,7 @@ export function AuthSheetLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-dvh flex flex-col relative">
+    <div className="relative flex min-h-svh flex-col">
       <div className="fixed inset-0 bg-slate-800">
         <img
           src="/images/auth-signup-bg.png"
@@ -20,7 +20,7 @@ export function AuthSheetLayout({
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-black/10" />
       </div>
 
-      <ThemeToggle className="fixed top-3 right-3 z-20 bg-white/90 dark:bg-slate-900/90 shadow-soft" />
+      <ThemeToggle className="fixed right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 bg-white/90 dark:bg-slate-900/90 shadow-soft" />
 
       <div className="relative flex-1 min-h-[46vh]" aria-hidden />
 

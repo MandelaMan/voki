@@ -1,18 +1,19 @@
+const shop = (
+  <g fill="none" stroke="#fff" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 14h36a2 2 0 0 1 2 2v7c-1.7 7-6.3 7-8 0-1.7 7-6.3 7-8 0-1.7 7-6.3 7-8 0-1.7 7-6.3 7-8 0-1.7 7-6.3 7-8 0V16a2 2 0 0 1 2-2z" />
+    <path d="M20 14v9M28 14v9M36 14v9M44 14v9" />
+    <rect x="16.5" y="32" width="31" height="18" rx="2.5" />
+    <path d="M22 50V41.2a3.2 3.2 0 0 1 6.4 0V50" />
+    <rect x="33.4" y="35.6" width="11.2" height="11.2" rx="1.4" />
+    <rect x="36.3" y="38.5" width="5.4" height="5.4" rx="0.7" />
+  </g>
+);
+
 export function VokiMark({ size = 40, className }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" className={className} aria-hidden>
       <rect width="64" height="64" rx="16" fill="#3b5fe6" />
-      <path fill="#fff" d="M13 26 32 13l19 13v3H13z" />
-      <rect x="11" y="27" width="42" height="6.5" fill="#fff" />
-      <rect x="15" y="27" width="5.2" height="6.5" fill="#8aabff" />
-      <rect x="25.6" y="27" width="5.2" height="6.5" fill="#8aabff" />
-      <rect x="36.2" y="27" width="5.2" height="6.5" fill="#8aabff" />
-      <rect x="46.8" y="27" width="5.2" height="6.5" fill="#8aabff" />
-      <path fill="#fff" d="M16 33.5h32v16a3.5 3.5 0 0 1-3.5 3.5h-25a3.5 3.5 0 0 1-3.5-3.5v-16z" />
-      <rect x="20" y="37.5" width="11" height="8" rx="1.6" fill="#3b5fe6" />
-      <path fill="#fff" d="M25.1 37.5h1.3v8h-1.3z" />
-      <path fill="#3b5fe6" d="M36.2 38.6h8.4c.9 0 1.6.7 1.6 1.6V53H34.6V40.2c0-.9.7-1.6 1.6-1.6z" />
-      <circle cx="43.4" cy="46.2" r="1.15" fill="#fff" />
+      {shop}
     </svg>
   );
 }

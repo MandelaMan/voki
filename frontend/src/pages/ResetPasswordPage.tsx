@@ -1,53 +1,64 @@
 import { useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { AuthField, AuthSubmitButton } from '../components/auth/AuthField';
-import { AuthSheetLayout } from '../components/layout/AuthSheetLayout';
+import { Lock } from 'lucide-react';
+import { AuthPillField, AuthPrimaryButton, AuthScreen } from '../components/auth/AuthScreen';
 import { authApi } from '../api';
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
   const { register, handleSubmit, formState: { isSubmitting } } = useForm<{ password: string }>();
 
   const onSubmit = async (data: { password: string }) => {
-    const token = searchParams.get('token') || '';
-    await authApi.resetPassword(token, data.password);
-    setDone(true);
-    setTimeout(() => navigate('/login'), 2000);
+    setError('');
+    try {
+      const token = searchParams.get('token') || '';
+      await authApi.resetPassword(token, data.password);
+      setDone(true);
+      setTimeout(() => navigate('/login'), 2000);
+    } catch {
+      setError('Could not reset the password. Request a new link and try again.');
+    }
   };
 
   return (
-    <AuthSheetLayout
+    <AuthScreen
       title="Reset Password"
       subtitle="Choose a new secure password for your account."
+      footer={
+        <>
+          Remember your password?{' '}
+          <Link to="/login" className="font-bold text-primary-600 hover:underline dark:text-primary-300">
+            Sign in
+          </Link>
+        </>
+      }
     >
       {done ? (
-        <p className="text-sm text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3 rounded-2xl">
-          Password reset! Redirecting to login…
+        <p className="rounded-2xl bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+          Password reset. Taking you back to login…
         </p>
       ) : (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <AuthField
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
+          {error && (
+            <p className="rounded-2xl bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300" role="alert">
+              {error}
+            </p>
+          )}
+          <AuthPillField
             label="New Password"
             type="password"
             placeholder="At least 8 characters"
             autoComplete="new-password"
+            icon={<Lock size={16} strokeWidth={1.75} />}
             {...register('password', { required: true, minLength: 8 })}
           />
-          <div className="pt-2">
-            <AuthSubmitButton loading={isSubmitting}>
-              Reset Password
-            </AuthSubmitButton>
-          </div>
-          <p className="text-center text-sm text-slate-500 pt-2">
-            <Link to="/login" className="font-bold text-primary-600 hover:underline">
-              Back to login
-            </Link>
-          </p>
+          <AuthPrimaryButton loading={isSubmitting}>Reset Password</AuthPrimaryButton>
         </form>
       )}
-    </AuthSheetLayout>
+    </AuthScreen>
   );
 }

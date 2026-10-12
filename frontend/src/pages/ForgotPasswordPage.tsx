@@ -1,64 +1,72 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { AuthField, AuthSubmitButton } from '../components/auth/AuthField';
-import { AuthSheetLayout } from '../components/layout/AuthSheetLayout';
+import { Mail } from 'lucide-react';
+import { AuthPillField, AuthPrimaryButton, AuthScreen } from '../components/auth/AuthScreen';
 import { authApi } from '../api';
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [resetToken, setResetToken] = useState('');
+  const [error, setError] = useState('');
   const { register, handleSubmit, formState: { isSubmitting } } = useForm<{ email: string }>();
 
   const onSubmit = async (data: { email: string }) => {
-    const result = await authApi.forgotPassword(data.email);
-    setSent(true);
-    if (result.resetToken) setResetToken(result.resetToken);
+    setError('');
+    try {
+      const result = await authApi.forgotPassword(data.email);
+      setSent(true);
+      if (result.resetToken) setResetToken(result.resetToken);
+    } catch {
+      setError('Could not send a reset link. Check the email and try again.');
+    }
   };
 
   return (
-    <AuthSheetLayout
+    <AuthScreen
       title="Forgot Password"
       subtitle="Enter your email and we'll send you a link to reset your password."
+      footer={
+        <>
+          Remember your password?{' '}
+          <Link to="/login" className="font-bold text-primary-600 hover:underline dark:text-primary-300">
+            Sign in
+          </Link>
+        </>
+      }
     >
       {sent ? (
-        <div className="space-y-4">
-          <p className="text-sm text-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3 rounded-2xl">
+        <div className="space-y-3.5">
+          <p className="rounded-2xl bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
             If the email exists, a reset link has been sent.
           </p>
           {resetToken && (
-            <div className="bg-slate-100 dark:bg-slate-800/80 rounded-2xl p-4 text-sm break-all">
+            <p className="rounded-2xl bg-white px-3 py-2 text-xs break-all text-neutral-600 shadow-[0_8px_22px_-14px_rgba(59,95,230,0.45)] dark:bg-neutral-900 dark:text-neutral-300 dark:ring-1 dark:ring-white/10">
               Dev token:{' '}
-              <Link to={`/reset-password?token=${resetToken}`} className="font-semibold text-primary-600 hover:underline">
+              <Link to={`/reset-password?token=${resetToken}`} className="font-semibold text-primary-600 hover:underline dark:text-primary-300">
                 {resetToken.slice(0, 20)}...
               </Link>
-            </div>
+            </p>
           )}
-          <Link to="/login" className="block text-center text-sm font-bold text-primary-600 hover:underline">
-            Back to login
-          </Link>
         </div>
       ) : (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <AuthField
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
+          {error && (
+            <p className="rounded-2xl bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300" role="alert">
+              {error}
+            </p>
+          )}
+          <AuthPillField
             label="Email"
             type="email"
-            placeholder="you@example.com"
+            placeholder="Email Address"
             autoComplete="email"
+            icon={<Mail size={16} strokeWidth={1.75} />}
             {...register('email', { required: true })}
           />
-          <div className="pt-2">
-            <AuthSubmitButton loading={isSubmitting}>
-              Send Reset Link
-            </AuthSubmitButton>
-          </div>
-          <p className="text-center text-sm text-slate-500 pt-2">
-            <Link to="/login" className="font-bold text-primary-600 hover:underline">
-              Back to login
-            </Link>
-          </p>
+          <AuthPrimaryButton loading={isSubmitting}>Send Reset Link</AuthPrimaryButton>
         </form>
       )}
-    </AuthSheetLayout>
+    </AuthScreen>
   );
 }

@@ -40,9 +40,6 @@ const sideItems = [
   { to: '/purchases', icon: Truck, label: 'Purchases' },
   { to: '/reports', icon: BarChart3, label: 'Reports' },
   { to: '/categories', icon: Tag, label: 'Categories' },
-];
-
-const sideLinks = [
   { to: '/suppliers', icon: Users, label: 'Suppliers' },
   { to: '/notifications', icon: Bell, label: 'Notifications' },
   { to: '/more', icon: Settings, label: 'Settings' },
@@ -190,27 +187,6 @@ function Sidebar() {
             );
           })}
         </div>
-
-        <div className="mt-4 space-y-1">
-          {sideLinks.map(({ to, icon: Icon, label }) => {
-            const active = isSideActive(pathname, to);
-            return (
-              <NavLink
-                key={to}
-                to={to}
-                className={cn(
-                  'flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm',
-                  active
-                    ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-200 font-medium'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                )}
-              >
-                <Icon size={16} />
-                {label}
-              </NavLink>
-            );
-          })}
-        </div>
       </div>
 
       <NavLink
@@ -268,11 +244,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { logout, pending } = useLogout();
 
   return (
-    <div className="min-h-dvh bg-[#eef3f9] dark:bg-slate-950 lg:flex">
+    <div className="min-h-svh bg-[#eef3f9] dark:bg-slate-950 lg:flex">
       <Sidebar />
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="sticky top-0 z-30 bg-[#eef3f9]/95 dark:bg-slate-950/95 backdrop-blur">
+        <header className="safe-top sticky top-0 z-30 bg-[#eef3f9]/95 dark:bg-slate-950/95 backdrop-blur">
           <div className="flex items-center gap-2 px-3 sm:px-4 lg:px-6 h-14">
             <button
               onClick={() => navigate('/businesses')}
@@ -350,8 +326,8 @@ export function AuthLayout({
   subtitle?: string;
 }) {
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center px-4 py-10 relative overflow-hidden">
-      <ThemeToggle className="absolute top-3 right-3 z-20 bg-white/90 dark:bg-slate-900/90" />
+    <div className="relative flex min-h-svh flex-col items-center justify-center overflow-x-hidden px-4 py-10">
+      <ThemeToggle className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 bg-white/90 dark:bg-slate-900/90" />
       <div className="absolute inset-0 bg-gradient-to-b from-primary-50/80 via-[#eef3f9] to-[#eef3f9] dark:from-primary-950/30 dark:via-slate-950 dark:to-slate-950" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary-200/30 dark:bg-primary-900/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
 

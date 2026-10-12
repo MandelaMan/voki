@@ -142,6 +142,8 @@ export function SearchInput({
 
 export function ListRow({
   icon,
+  thumbnail,
+  thumbnailAlt = '',
   title,
   subtitle,
   trailing,
@@ -150,6 +152,8 @@ export function ListRow({
   className,
 }: {
   icon?: React.ReactNode;
+  thumbnail?: string | null;
+  thumbnailAlt?: string;
   title: string;
   subtitle?: string;
   trailing?: React.ReactNode;
@@ -168,11 +172,15 @@ export function ListRow({
         className
       )}
     >
-      {icon && (
+      {thumbnail ? (
+        <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800/80 overflow-hidden flex items-center justify-center shrink-0">
+          <img src={thumbnail} alt={thumbnailAlt} className="max-h-full max-w-full object-contain" loading="lazy" />
+        </div>
+      ) : icon ? (
         <div className="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/25 text-primary-600 flex items-center justify-center shrink-0">
           {icon}
         </div>
-      )}
+      ) : null}
       <div className="flex-1 min-w-0">
         <p className="text-body-medium text-slate-900 dark:text-slate-100 truncate">{title}</p>
         {subtitle && <p className="text-caption text-slate-500 mt-0.5 truncate">{subtitle}</p>}

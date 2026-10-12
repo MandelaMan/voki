@@ -11,14 +11,24 @@ export const saleService = {
     startDate?: string;
     endDate?: string;
     customerId?: string;
+    paymentMethod?: string;
+    search?: string;
   }) {
-    const { businessId, page, limit, startDate, endDate, customerId } = query;
+    const { businessId, page, limit, startDate, endDate, customerId, paymentMethod, search } = query;
+    const saleDate = {
+      ...(startDate && { gte: new Date(startDate) }),
+      ...(endDate && { lte: new Date(endDate) }),
+    };
+    const term = search?.trim();
     const where = {
       businessId,
       deletedAt: null,
       ...(customerId && { customerId }),
-      ...(startDate && { saleDate: { gte: new Date(startDate) } }),
-      ...(endDate && { saleDate: { lte: new Date(endDate) } }),
+      ...(paymentMethod && { paymentMethod: paymentMethod as 'CASH' | 'CARD' | 'MPESA' | 'BANK_TRANSFER' | 'OTHER' }),
+      ...(startDate || endDate ? { saleDate } : {}),
+      ...(term && {
+        items: { some: { product: { name: { contains: term } } } },
+      }),
     };
 
     const [sales, total] = await Promise.all([
@@ -28,7 +38,11 @@ export const saleService = {
           customer: true,
           items: {
             include: {
-              product: { include: { images: { take: 1 } } },
+              product: {
+                include: {
+                  images: { orderBy: [{ isPrimary: 'desc' }, { order: 'asc' }], take: 1 },
+                },
+              },
               variant: true,
             },
           },
@@ -50,7 +64,7 @@ export const saleService = {
         customer: true,
         items: {
           include: {
-            product: { include: { images: true } },
+            product: { include: { images: { orderBy: [{ isPrimary: 'desc' }, { order: 'asc' }] } } },
             variant: true,
           },
         },

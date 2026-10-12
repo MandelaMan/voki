@@ -5,7 +5,7 @@ import { Card } from '../components/ui/Card';
 import { Skeleton } from '../components/ui/Badge';
 import { saleApi } from '../api';
 import { useBusinessStore } from '../stores';
-import { formatCurrency, formatDate } from '../lib/utils';
+import { formatCurrency, formatDate, getImageUrl } from '../lib/utils';
 
 export default function SaleDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -54,12 +54,27 @@ export default function SaleDetailPage() {
             {sale.items.map((item) => (
               <tr key={item.id} className="border-t border-slate-100 dark:border-slate-800">
                 <td className="px-3 py-2.5">
-                  {item.product ? (
-                    <Link to={`/inventory/${item.product.id}`} className="font-semibold text-primary-600">{item.product.name}</Link>
-                  ) : (
-                    <span>Removed product</span>
-                  )}
-                  {item.variant && <p className="text-[11px] text-slate-400">{item.variant.variantType}: {item.variant.variantValue}</p>}
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-slate-50 dark:bg-slate-800/80 overflow-hidden flex items-center justify-center shrink-0">
+                      {getImageUrl(item.product?.images?.[0]?.path) ? (
+                        <img
+                          src={getImageUrl(item.product?.images?.[0]?.path)!}
+                          alt=""
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      ) : (
+                        <span className="text-[9px] text-slate-400">No image</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      {item.product ? (
+                        <Link to={`/inventory/${item.product.id}`} className="font-semibold text-primary-600">{item.product.name}</Link>
+                      ) : (
+                        <span>Removed product</span>
+                      )}
+                      {item.variant && <p className="text-[11px] text-slate-400">{item.variant.variantType}: {item.variant.variantValue}</p>}
+                    </div>
+                  </div>
                 </td>
                 <td className="px-3 py-2.5 text-right tabular-nums">{item.quantity}</td>
                 <td className="px-3 py-2.5 text-right tabular-nums font-semibold">{formatCurrency(Number(item.sellingPrice) * item.quantity, currency)}</td>

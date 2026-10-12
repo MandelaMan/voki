@@ -24,6 +24,8 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -31,8 +33,17 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: calc(0.8125rem + 0.5px);
   line-height: 1.45;
-  min-height: 100dvh;
+  min-height: 100svh;
   -webkit-font-smoothing: antialiased;
+}
+
+/* iOS zooms the page when a field is under 16px, then leaves it zoomed out on blur. */
+@media (max-width: 1023px), ((hover: none) and (pointer: coarse)) {
+  input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='file']):not([type='button']):not([type='submit']):not([type='reset']):not([type='range']):not([type='color']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* Unified typography scale — 13.5px base */
@@ -103,7 +114,13 @@ body {
 }
 
 .safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-top {
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* Height from viewport bottom to top of bottom nav card */

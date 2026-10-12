@@ -24,6 +24,8 @@ export const saleQuerySchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   customerId: z.string().uuid().optional(),
+  paymentMethod: z.enum(['CASH', 'CARD', 'MPESA', 'BANK_TRANSFER', 'OTHER']).optional(),
+  search: z.string().trim().max(100).optional(),
 });
 
 export const syncSalesSchema = z.object({
