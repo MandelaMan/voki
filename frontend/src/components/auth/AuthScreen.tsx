@@ -1,5 +1,6 @@
 import { useState, type InputHTMLAttributes, type ReactNode, type Ref } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { VokiMark } from '../brand/VokiMark';
 import { ThemeToggle } from '../layout/ThemeToggle';
 import { cn } from '../../lib/utils';
 
@@ -30,7 +31,7 @@ export function AuthScreen({
 
         <div className="flex min-h-0 flex-1 flex-col justify-center">
           <div className="mb-3 flex flex-col items-center">
-            <BrandMark />
+            <VokiMark size={44} />
             <p className="mt-1 text-xl font-extrabold tracking-tight text-primary-600 dark:text-primary-300">
               Voki
             </p>
@@ -53,17 +54,6 @@ export function AuthScreen({
         </p>
       </div>
     </div>
-  );
-}
-
-function BrandMark() {
-  return (
-    <svg width="40" height="40" viewBox="0 0 54 54" fill="none" aria-hidden>
-      <rect x="17" y="7" width="26" height="20" rx="4.5" stroke="#3b5fe6" strokeWidth="2.15" />
-      <path d="M23 14.2h14M23 18.6h8.5" stroke="#3b5fe6" strokeWidth="2" strokeLinecap="round" />
-      <rect x="9" y="21" width="30" height="24" rx="5" className="fill-[#eef3ff] dark:fill-[#141a2c]" stroke="#3b5fe6" strokeWidth="2.15" />
-      <path d="M16 30.2h16M16 35.4h10" stroke="#3b5fe6" strokeWidth="2" strokeLinecap="round" />
-    </svg>
   );
 }
 

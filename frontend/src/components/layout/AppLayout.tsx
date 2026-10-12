@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react';
+import { VokiMark } from '../brand/VokiMark';
 import { PageTransition } from './PageTransition';
 import { InventoryFab } from './InventoryFab';
 import { ThemeToggle } from './ThemeToggle';
@@ -142,9 +143,7 @@ function Sidebar() {
   return (
     <aside className="hidden lg:flex w-[232px] shrink-0 sticky top-0 h-dvh flex-col border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-4">
       <div className="flex items-center gap-2.5 px-1 mb-4">
-        <div className="w-9 h-9 rounded-xl bg-primary-600 text-white flex items-center justify-center font-bold">
-          V
-        </div>
+        <VokiMark size={36} />
         <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">Voki</span>
       </div>
 
@@ -275,9 +274,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               onClick={() => navigate('/businesses')}
               className="lg:hidden flex items-center gap-2 min-w-0 flex-1 text-left"
             >
-              <div className="w-8 h-8 rounded-lg bg-primary-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
-                V
-              </div>
+              <VokiMark size={32} className="shrink-0" />
               <span className="truncate text-sm font-semibold text-slate-900 dark:text-white">
                 {activeBusiness?.name || 'Select business'}
               </span>
@@ -357,10 +354,10 @@ export function AuthLayout({
       <div className="w-full max-w-sm relative z-10">
         <div className="text-center mb-6">
           <div
-            className="w-14 h-14 rounded-2xl bg-primary-600 flex items-center justify-center text-white text-heading mx-auto mb-3"
+            className="mx-auto mb-3 h-14 w-14 rounded-2xl"
             style={{ boxShadow: 'var(--shadow-primary)' }}
           >
-            V
+            <VokiMark size={56} />
           </div>
           <h1 className="text-heading text-slate-900 dark:text-white">Voki</h1>
           <p className="text-caption text-slate-500 mt-1">Inventory & Sales Management</p>
