@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   User, Building2, Tag, Truck, BarChart3, Bell,
-  Moon, Sun, LogOut, ChevronRight,
+  Moon, Sun, LogOut, ChevronRight, Shield, FileText,
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -17,6 +17,8 @@ const menuItems = [
   { to: '/sales', icon: BarChart3, label: 'Sales History' },
   { to: '/reports', icon: BarChart3, label: 'Reports' },
   { to: '/notifications', icon: Bell, label: 'Notifications' },
+  { to: '/privacy', icon: Shield, label: 'Privacy Policy' },
+  { to: '/terms', icon: FileText, label: 'Terms and Conditions' },
 ];
 
 export default function MorePage() {

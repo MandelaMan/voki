@@ -94,6 +94,17 @@ export default function RegisterPage() {
           {...register('password')}
         />
 
+        <p className="px-2 text-center text-[12px] leading-snug text-neutral-500 dark:text-neutral-400">
+          By creating an account, you agree to the{' '}
+          <Link to="/terms" className="font-semibold text-primary-600 hover:underline dark:text-primary-300">
+            Terms
+          </Link>{' '}
+          and{' '}
+          <Link to="/privacy" className="font-semibold text-primary-600 hover:underline dark:text-primary-300">
+            Privacy Policy
+          </Link>.
+        </p>
+
         <AuthPrimaryButton loading={isSubmitting}>Create Account</AuthPrimaryButton>
       </form>
     </AuthScreen>

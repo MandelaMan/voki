@@ -32,6 +32,8 @@ import ProfilePage from './pages/ProfilePage';
 import CategoriesPage from './pages/CategoriesPage';
 import SuppliersPage from './pages/SuppliersPage';
 import NotificationsPage from './pages/NotificationsPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,6 +75,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <AppLayout>{children}</AppLayout>;
 }
 
+function LegalRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  if (!isAuthenticated) return children;
+  return <AppLayout>{children}</AppLayout>;
+}
+
 function AppInitializer({ children }: { children: React.ReactNode }) {
   const theme = useThemeStore((s) => s.theme);
   useOfflineSync();
@@ -100,6 +108,8 @@ export default function App() {
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/privacy" element={<LegalRoute><PrivacyPage /></LegalRoute>} />
+            <Route path="/terms" element={<LegalRoute><TermsPage /></LegalRoute>} />
 
             <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
             <Route path="/inventory" element={<ProtectedRoute><InventoryPage /></ProtectedRoute>} />

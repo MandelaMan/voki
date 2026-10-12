@@ -62,6 +62,8 @@ function isBottomActive(pathname: string, to: string) {
       || pathname.startsWith('/suppliers')
       || pathname.startsWith('/notifications')
       || pathname.startsWith('/reports')
+      || pathname.startsWith('/privacy')
+      || pathname.startsWith('/terms')
     );
   }
   return pathname.startsWith(to);
@@ -89,6 +91,8 @@ function sectionLabel(pathname: string) {
   if (pathname.startsWith('/notifications')) return 'Notifications';
   if (pathname.startsWith('/businesses')) return 'Businesses';
   if (pathname.startsWith('/profile')) return 'Profile';
+  if (pathname.startsWith('/privacy')) return 'Privacy Policy';
+  if (pathname.startsWith('/terms')) return 'Terms and Conditions';
   if (pathname.startsWith('/more')) return 'Settings';
   return 'Home';
 }

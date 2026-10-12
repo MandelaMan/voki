@@ -74,6 +74,15 @@ export default function LoginPage() {
           <Link to="/register" className="font-bold text-primary-600 hover:underline dark:text-primary-300">
             Sign up
           </Link>
+          <span className="mt-2 block text-[12px]">
+            <Link to="/privacy" className="font-semibold text-primary-600 hover:underline dark:text-primary-300">
+              Privacy
+            </Link>
+            <span className="px-1.5 text-neutral-300">·</span>
+            <Link to="/terms" className="font-semibold text-primary-600 hover:underline dark:text-primary-300">
+              Terms
+            </Link>
+          </span>
         </>
       }
     >
