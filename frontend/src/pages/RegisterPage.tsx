@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AuthField, AuthSubmitButton } from '../components/auth/AuthField';
-import { AuthSheetLayout } from '../components/layout/AuthSheetLayout';
+import { Lock, Mail, User } from 'lucide-react';
+import { AuthPillField, AuthPrimaryButton, AuthScreen } from '../components/auth/AuthScreen';
 import { useAuthStore } from '../stores';
 
 const schema = z.object({
   firstName: z.string().min(1, 'Required'),
   lastName: z.string().min(1, 'Required'),
-  email: z.string().email('Invalid email'),
+  email: z.string().email('Enter a valid email'),
   password: z.string().min(8, 'Min 8 characters'),
 });
 
@@ -36,65 +36,66 @@ export default function RegisterPage() {
   };
 
   return (
-    <AuthSheetLayout
+    <AuthScreen
       title="Create Account"
-      subtitle="Join Voki to track inventory, record sales, and grow your business — all in one place."
+      subtitle="Enter your details to get started"
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link to="/login" className="font-bold text-primary-600 hover:underline dark:text-primary-300">
+            Sign in
+          </Link>
+        </>
+      }
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-2.5">
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 dark:bg-red-950/30 px-4 py-3 rounded-2xl" role="alert">
+          <p className="rounded-2xl bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300" role="alert">
             {error}
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <AuthField
+        <div className="grid grid-cols-2 gap-2.5">
+          <AuthPillField
             label="First Name"
             placeholder="Jane"
             autoComplete="given-name"
+            icon={<User size={16} strokeWidth={1.75} />}
             error={errors.firstName?.message}
             {...register('firstName')}
           />
-          <AuthField
+          <AuthPillField
             label="Last Name"
             placeholder="Doe"
             autoComplete="family-name"
+            icon={<User size={16} strokeWidth={1.75} />}
             error={errors.lastName?.message}
             {...register('lastName')}
           />
         </div>
 
-        <AuthField
+        <AuthPillField
           label="Email"
           type="email"
-          placeholder="you@example.com"
+          placeholder="Email Address"
           autoComplete="email"
+          icon={<Mail size={16} strokeWidth={1.75} />}
           error={errors.email?.message}
           {...register('email')}
         />
 
-        <AuthField
+        <AuthPillField
           label="Password"
           type="password"
           placeholder="At least 8 characters"
           autoComplete="new-password"
+          icon={<Lock size={16} strokeWidth={1.75} />}
           error={errors.password?.message}
           {...register('password')}
         />
 
-        <div className="pt-2">
-          <AuthSubmitButton loading={isSubmitting}>
-            Create Account
-          </AuthSubmitButton>
-        </div>
-
-        <p className="text-center text-sm text-slate-500 dark:text-slate-400 pt-2">
-          Already have an account?{' '}
-          <Link to="/login" className="font-bold text-primary-600 hover:underline">
-            Sign in
-          </Link>
-        </p>
+        <AuthPrimaryButton loading={isSubmitting}>Create Account</AuthPrimaryButton>
       </form>
-    </AuthSheetLayout>
+    </AuthScreen>
   );
 }
