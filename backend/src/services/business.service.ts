@@ -25,7 +25,7 @@ export const businessService = {
     lowStockThreshold?: number;
   }) {
     const business = await prisma.business.create({
-      data: { userId, ...data },
+      data: { userId, ...data, currency: data.currency || 'KES' },
     });
     await activityRepository.log({
       userId,

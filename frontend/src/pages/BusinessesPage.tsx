@@ -4,10 +4,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Check, Pencil } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
 import { Card } from '../components/ui/Card';
 import { Skeleton } from '../components/ui/Badge';
 import { PageHeader } from '../components/ui/PageHeader';
 import { businessApi } from '../api';
+import { currencyOptions } from '../lib/currencies';
 import { useBusinessStore } from '../stores';
 import type { Business } from '../types';
 
@@ -64,7 +66,12 @@ export default function BusinessesPage() {
       {editing && (
         <Card className="space-y-3 !p-3">
           <Input label="Name" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
-          <Input label="Currency" value={editing.currency} onChange={(e) => setEditing({ ...editing, currency: e.target.value.toUpperCase() })} />
+          <Select
+            label="Currency"
+            options={currencyOptions(editing.currency)}
+            value={editing.currency}
+            onChange={(e) => setEditing({ ...editing, currency: e.target.value })}
+          />
           <div className="flex gap-2">
             <Button className="flex-1" disabled={!editing.name.trim()} loading={updateMutation.isPending} onClick={() => updateMutation.mutate()}>Save</Button>
             <Button variant="secondary" onClick={() => setEditing(null)}>Cancel</Button>

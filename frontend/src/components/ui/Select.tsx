@@ -1,15 +1,16 @@
-import { type SelectHTMLAttributes, forwardRef } from 'react';
+import { type ReactNode, type SelectHTMLAttributes, forwardRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
+  icon?: ReactNode;
   options: Array<{ value: string; label: string }>;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, label, error, id, options, ...props }, ref) => (
+  ({ className, label, error, id, options, icon, ...props }, ref) => (
     <div className="space-y-1.5">
       {label && (
         <label htmlFor={id} className="block text-label text-slate-600 dark:text-slate-400">
@@ -17,11 +18,17 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         </label>
       )}
       <div className={cn('surface-input relative', error && 'border-red-300 ring-2 ring-red-500/10')}>
+        {icon && (
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex items-center">
+            {icon}
+          </span>
+        )}
         <select
           ref={ref}
           id={id}
           className={cn(
-            'w-full appearance-none px-4 py-2.5 pr-10 rounded-2xl border-0 bg-transparent',
+            'w-full appearance-none py-2.5 pr-10 rounded-2xl border-0 bg-transparent',
+            icon ? 'pl-11' : 'px-4',
             'text-slate-900 dark:text-slate-100 min-h-[44px] text-body',
             'focus:outline-none cursor-pointer',
             className

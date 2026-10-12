@@ -18,7 +18,7 @@ export function AuthScreen({
     <div className="h-dvh overflow-hidden bg-[#e6eaf2] dark:bg-[#10131c] sm:flex sm:items-center sm:justify-center sm:p-4">
       <div
         className={cn(
-          'relative flex h-full w-full flex-col overflow-hidden px-6 py-3',
+          'relative flex h-full w-full flex-col overflow-hidden px-7 py-4',
           'bg-[linear-gradient(180deg,#d7e4ff_0%,#eef3ff_24%,#f6f8fc_58%,#f4f6fb_100%)]',
           'dark:bg-[linear-gradient(180deg,#1a2440_0%,#141a2c_40%,#10131c_100%)]',
           'sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:max-w-[430px] sm:rounded-[2.25rem] sm:border sm:border-white/80 sm:px-7 sm:py-5',
@@ -36,7 +36,7 @@ export function AuthScreen({
             </p>
           </div>
 
-          <div className="mb-3 text-center">
+          <div className="mb-5 text-center">
             <h1 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
               {title}
             </h1>
@@ -125,12 +125,12 @@ export function AuthPillField({ label, icon, error, className, type, id, ref, ..
   const inputId = id || label.toLowerCase().replace(/\s+/g, '-');
 
   return (
-    <div className="space-y-1">
-      <label htmlFor={inputId} className="block px-1 text-[12px] leading-none text-neutral-500 dark:text-neutral-400">
+    <div className="space-y-2">
+      <label htmlFor={inputId} className="block px-3 text-[13px] leading-none text-neutral-500 dark:text-neutral-400">
         {label}
       </label>
       <div className="relative">
-        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400">
           {icon}
         </span>
         <input
@@ -138,12 +138,12 @@ export function AuthPillField({ label, icon, error, className, type, id, ref, ..
           id={inputId}
           type={isPassword && showPassword ? 'text' : type}
           className={cn(
-            'h-11 w-full rounded-full border-0 bg-white pl-10 text-sm text-neutral-900 outline-none',
+            'h-12 w-full rounded-full border-0 bg-white pl-12 text-sm text-neutral-900 outline-none',
             'shadow-[0_8px_22px_-14px_rgba(59,95,230,0.45),0_1px_2px_rgba(15,23,42,0.04)]',
             'placeholder:text-neutral-400',
             'focus:ring-2 focus:ring-primary-500/40',
             'dark:bg-neutral-900 dark:text-white dark:shadow-none dark:ring-1 dark:ring-white/10',
-            isPassword ? 'pr-11' : 'pr-4',
+            isPassword ? 'pr-12' : 'pr-5',
             error && 'ring-2 ring-red-300',
             className
           )}
@@ -154,7 +154,7 @@ export function AuthPillField({ label, icon, error, className, type, id, ref, ..
             type="button"
             tabIndex={-1}
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <EyeOff size={16} strokeWidth={1.75} /> : <Eye size={16} strokeWidth={1.75} />}

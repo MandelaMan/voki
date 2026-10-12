@@ -47,7 +47,7 @@ model Business {
   name              String
   description       String?       @db.Text
   logo              String?
-  currency          String        @default("USD")
+  currency          String        @default("KES")
   lowStockThreshold Int           @default(5)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
