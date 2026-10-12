@@ -122,7 +122,7 @@ export const purchaseService = {
         entityType: 'Purchase',
         entityId: purchase.id,
         metadata: { totalCost },
-      });
+      }, tx);
 
       return purchase;
     });

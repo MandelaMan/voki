@@ -545,7 +545,7 @@ export const productService = {
         entityType: 'Product',
         entityId: product.id,
         metadata: { purchaseId: purchase.id, totalCost, items: activeItems },
-      });
+      }, tx);
 
       const updatedProduct = await tx.product.findFirst({
         where: { id: productId, businessId: data.businessId, deletedAt: null },

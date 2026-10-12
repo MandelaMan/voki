@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
@@ -16,6 +17,19 @@ export const errorHandler = (
   }
 
   logger.error('Unhandled error', { error: err.message, stack: err.stack });
+
+  const databaseError =
+    err instanceof Prisma.PrismaClientKnownRequestError ||
+    err instanceof Prisma.PrismaClientValidationError ||
+    err instanceof Prisma.PrismaClientInitializationError;
+  if (databaseError) {
+    const code = err instanceof Prisma.PrismaClientKnownRequestError ? err.code : 'DATABASE_ERROR';
+    return res.status(500).json({
+      success: false,
+      error: { message: err.message, code },
+    });
+  }
+
   return res.status(500).json({
     success: false,
     error: { message: 'Internal server error', code: 'INTERNAL_ERROR' },

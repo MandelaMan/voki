@@ -251,8 +251,8 @@ model SaleItem {
   variantId     String?
   quantity      Int
   sellingPrice  Decimal         @db.Decimal(12, 2)
-  buyingPrice   Decimal         @db.Decimal(12, 2)
-  profit        Decimal         @db.Decimal(12, 2)
+  buyingPrice   Decimal         @default(0) @db.Decimal(12, 2)
+  profit        Decimal         @default(0) @db.Decimal(12, 2)
   createdAt     DateTime        @default(now())
   sale          Sale            @relation(fields: [saleId], references: [id], onDelete: Cascade)
   product       Product         @relation(fields: [productId], references: [id])

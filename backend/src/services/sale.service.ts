@@ -214,7 +214,7 @@ export const saleService = {
         entityType: 'Sale',
         entityId: sale.id,
         metadata: { totalAmount, totalProfit },
-      });
+      }, tx);
 
       return sale;
     });

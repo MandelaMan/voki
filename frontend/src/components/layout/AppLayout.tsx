@@ -104,25 +104,50 @@ export function BottomNav() {
     const pin = () => {
       const el = navRef.current;
       if (!el) return;
+      const shell = document.querySelector<HTMLElement>('.app-shell');
+      const iosStandalone = 'standalone' in navigator && Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+      const standalone =
+        iosStandalone
+        || window.matchMedia('(display-mode: standalone)').matches
+        || window.matchMedia('(display-mode: fullscreen)').matches;
+
       el.style.setProperty('position', 'fixed', 'important');
       el.style.setProperty('left', '0px', 'important');
       el.style.setProperty('right', '0px', 'important');
-      el.style.setProperty('bottom', '0px', 'important');
       el.style.setProperty('top', 'auto', 'important');
       el.style.setProperty('transform', 'none', 'important');
       el.style.setProperty('margin', '0px', 'important');
+      el.style.setProperty('padding-bottom', '0px', 'important');
+      el.style.setProperty('bottom', '0px', 'important');
+      shell?.style.removeProperty('bottom');
+
+      if (!standalone || window.innerWidth >= 1024) return;
+
+      const viewport = window.visualViewport;
+      const visibleBottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
+      const gap = Math.round(visibleBottom - el.getBoundingClientRect().bottom);
+      // Installed apps can leave a toolbar-sized strip under the layout box. Pull the
+      // shell and the bar down together so the icons stay on the screen edge.
+      if (gap > 1 && gap < 96) {
+        const bottom = `${-gap}px`;
+        el.style.setProperty('bottom', bottom, 'important');
+        shell?.style.setProperty('bottom', bottom, 'important');
+      }
     };
     pin();
     const viewport = window.visualViewport;
+    const standaloneQuery = window.matchMedia('(display-mode: standalone)');
     viewport?.addEventListener('resize', pin);
     viewport?.addEventListener('scroll', pin);
     window.addEventListener('resize', pin);
     window.addEventListener('orientationchange', pin);
+    standaloneQuery.addEventListener('change', pin);
     return () => {
       viewport?.removeEventListener('resize', pin);
       viewport?.removeEventListener('scroll', pin);
       window.removeEventListener('resize', pin);
       window.removeEventListener('orientationchange', pin);
+      standaloneQuery.removeEventListener('change', pin);
     };
   }, []);
 
