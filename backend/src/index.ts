@@ -9,6 +9,6 @@ uploadDirs.forEach((dir) => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-app.listen(config.port, () => {
+app.listen(config.port, '0.0.0.0', () => {
   logger.info(`Voki API running on port ${config.port}`);
 });
