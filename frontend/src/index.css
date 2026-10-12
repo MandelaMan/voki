@@ -131,9 +131,9 @@ body {
   }
 }
 
-/* Icon row plus the home-indicator area, so content clears a bar that is pinned to the screen edge. */
+/* Icon row only. The bar itself is pinned to the screen edge with no inset under the labels. */
 :root {
-  --voki-bottom-nav-offset: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+  --voki-bottom-nav-offset: 3.5rem;
   --voki-fab-bottom: calc(var(--voki-bottom-nav-offset) + 0.75rem);
 }
 
@@ -165,8 +165,7 @@ body {
     z-index: 80;
     width: 100%;
     margin: 0;
-    padding-bottom: constant(safe-area-inset-bottom);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: 0;
   }
 }
 

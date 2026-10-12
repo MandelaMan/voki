@@ -131,7 +131,7 @@ export function BottomNav() {
       ref={navRef}
       className="app-tabbar shrink-0 z-40 border-t border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 lg:hidden"
     >
-      <div className="grid grid-cols-5 px-1 pt-0.5">
+      <div className="grid grid-cols-5 px-1">
         {bottomNav.map(({ to, icon: Icon, label }) => {
           const active = isBottomActive(pathname, to);
           return (
@@ -139,7 +139,7 @@ export function BottomNav() {
               key={to}
               to={to}
               end={to === '/'}
-              className="flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl pb-0.5 pt-1"
+              className="flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl py-1.5"
             >
               <span
                 className={cn(
