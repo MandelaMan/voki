@@ -1,5 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import {
   User, Building2, Tag, Truck, BarChart3, Bell,
   Moon, Sun, LogOut, ChevronRight,
@@ -8,6 +7,7 @@ import { Card } from '../components/ui/Card';
 import { PageHeader } from '../components/ui/PageHeader';
 import { useAuthStore } from '../stores';
 import { toggleColorMode, useIsDark } from '../components/layout/ThemeToggle';
+import { useLogout } from '../hooks/useLogout';
 
 const menuItems = [
   { to: '/profile', icon: User, label: 'Profile' },
@@ -20,16 +20,9 @@ const menuItems = [
 ];
 
 export default function MorePage() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const isDark = useIsDark();
-
-  const handleLogout = async () => {
-    await logout();
-    queryClient.clear();
-    navigate('/login', { replace: true });
-  };
+  const { logout, pending } = useLogout();
 
   return (
     <div className="page-stack">
@@ -80,10 +73,13 @@ export default function MorePage() {
       </Card>
 
       <button
-        onClick={handleLogout}
-        className="w-full flex items-center justify-center gap-2 p-4 text-red-600 text-body-medium font-semibold"
+        type="button"
+        onClick={logout}
+        disabled={pending}
+        className="w-full flex items-center justify-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3.5 text-red-600 text-body-medium font-semibold hover:bg-red-100 disabled:opacity-60 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300 dark:hover:bg-red-950/50"
       >
-        <LogOut size={20} /> Sign Out
+        <LogOut size={18} />
+        {pending ? 'Logging out...' : 'Log out'}
       </button>
     </div>
   );

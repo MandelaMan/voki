@@ -13,6 +13,7 @@ import {
   Tag,
   Users,
   Settings,
+  LogOut,
 } from 'lucide-react';
 import { PageTransition } from './PageTransition';
 import { InventoryFab } from './InventoryFab';
@@ -20,6 +21,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { cn } from '../../lib/utils';
 import { useAuthStore, useBusinessStore } from '../../stores';
 import { useOnlineStatus } from '../../hooks/useOfflineSync';
+import { useLogout } from '../../hooks/useLogout';
 import { offlineQueue } from '../../lib/offline';
 
 const bottomNav = [
@@ -134,6 +136,7 @@ export function BottomNav() {
 function Sidebar() {
   const { pathname } = useLocation();
   const { user } = useAuthStore();
+  const { logout, pending } = useLogout();
   const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Account';
 
   return (
@@ -220,6 +223,16 @@ function Sidebar() {
         </div>
         <ChevronDown size={14} className="text-slate-400 shrink-0" />
       </NavLink>
+
+      <button
+        type="button"
+        onClick={logout}
+        disabled={pending}
+        className="mt-2 flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60 dark:text-red-400 dark:hover:bg-red-950/30"
+      >
+        <LogOut size={16} />
+        {pending ? 'Logging out...' : 'Log out'}
+      </button>
     </aside>
   );
 }
@@ -249,6 +262,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const section = sectionLabel(pathname);
+  const { logout, pending } = useLogout();
 
   return (
     <div className="min-h-dvh bg-[#eef3f9] dark:bg-slate-950 lg:flex">
@@ -286,6 +300,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </button>
               <StatusCluster isOnline={isOnline} pendingSync={pendingSync} />
               <ThemeToggle />
+              <button
+                type="button"
+                onClick={logout}
+                disabled={pending}
+                className="p-2 rounded-xl text-slate-500 hover:bg-white disabled:opacity-60 dark:hover:bg-slate-800"
+                aria-label="Log out"
+                title="Log out"
+              >
+                <LogOut size={18} />
+              </button>
               <button
                 onClick={() => navigate('/notifications')}
                 className="p-2 rounded-xl text-slate-500 hover:bg-white dark:hover:bg-slate-800"
