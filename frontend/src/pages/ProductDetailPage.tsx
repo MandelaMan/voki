@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ShoppingCart, Trash2, PackagePlus, Pencil } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { Alert } from '../components/ui/Alert';
 import { StockBadge } from '../components/ui/Badge';
 import { ImageGallery } from '../components/products/ImageGallery';
 import { ProductHistoryTabs } from '../components/products/ProductHistoryTabs';
@@ -14,7 +15,7 @@ import {
   revokePreviews,
   type ImagePreview,
 } from '../components/ui/ImageUploadPreview';
-import { formatCurrency, isProductOutOfStock } from '../lib/utils';
+import { formatCurrency, getApiErrorMessage, isProductOutOfStock } from '../lib/utils';
 import { productApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
 import { useBusinessStore } from '../stores';
@@ -25,6 +26,7 @@ export default function ProductDetailPage() {
   const queryClient = useQueryClient();
   const { activeBusiness } = useBusinessStore();
   const [uploading, setUploading] = useState(false);
+  const [actionError, setActionError] = useState('');
   const [pendingPreviews, setPendingPreviews] = useState<ImagePreview[]>([]);
   const previewsRef = useRef(pendingPreviews);
   previewsRef.current = pendingPreviews;
@@ -40,9 +42,11 @@ export default function ProductDetailPage() {
   const deleteMutation = useMutation({
     mutationFn: () => productApi.delete(id!, activeBusiness!.id),
     onSuccess: async () => {
+      setActionError('');
       await refreshCommerce(queryClient);
       navigate('/inventory');
     },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not delete this product.')),
   });
 
   const handleAddPending = (files: File[]) => {
@@ -68,7 +72,10 @@ export default function ProductDetailPage() {
       );
       revokePreviews(pendingPreviews);
       setPendingPreviews([]);
+      setActionError('');
       refreshCommerce(queryClient);
+    } catch (error) {
+      setActionError(getApiErrorMessage(error, 'Could not upload those photos.'));
     } finally {
       setUploading(false);
     }
@@ -101,6 +108,8 @@ export default function ProductDetailPage() {
       <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-slate-500">
         <ArrowLeft size={16} /> Back
       </button>
+
+      {actionError && <Alert variant="error">{actionError}</Alert>}
 
       <div className="grid grid-cols-1 sm:grid-cols-[16rem_minmax(0,1fr)] lg:grid-cols-[18rem_minmax(0,1fr)] gap-4 items-start">
         <div className="min-w-0 space-y-2">

@@ -6,9 +6,11 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Card } from '../components/ui/Card';
+import { Alert } from '../components/ui/Alert';
 import { PageHeader } from '../components/ui/PageHeader';
 import { supplierApi, productApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
+import { getApiErrorMessage } from '../lib/utils';
 import { useBusinessStore } from '../stores';
 import type { Supplier } from '../types';
 
@@ -23,6 +25,7 @@ export default function SuppliersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [attachFor, setAttachFor] = useState<string | null>(null);
   const [productId, setProductId] = useState('');
+  const [actionError, setActionError] = useState('');
 
   const { data: suppliers } = useQuery({
     queryKey: ['suppliers', activeBusiness?.id],
@@ -43,33 +46,43 @@ export default function SuppliersPage() {
   const createMutation = useMutation({
     mutationFn: () => supplierApi.create({ businessId: activeBusiness!.id, ...form }),
     onSuccess: () => {
+      setActionError('');
       refresh();
       setForm(emptyForm);
       setShowForm(false);
     },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not save that supplier.')),
   });
 
   const updateMutation = useMutation({
     mutationFn: () => supplierApi.update(editingId!, { businessId: activeBusiness!.id, ...form }),
     onSuccess: () => {
+      setActionError('');
       refresh();
       setEditingId(null);
       setForm(emptyForm);
     },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not update that supplier.')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => supplierApi.delete(id, activeBusiness!.id),
-    onSuccess: () => refresh(),
+    onSuccess: () => {
+      setActionError('');
+      refresh();
+    },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not delete that supplier.')),
   });
 
   const attachMutation = useMutation({
     mutationFn: () => productApi.update(productId, { businessId: activeBusiness!.id, supplierId: attachFor }),
     onSuccess: () => {
+      setActionError('');
       refresh();
       setProductId('');
       setAttachFor(null);
     },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not link that product.')),
   });
 
   useEffect(() => {
@@ -95,6 +108,8 @@ export default function SuppliersPage() {
         subtitle="Vendors linked to the products they supply"
         action={<Button size="sm" onClick={() => { setEditingId(null); setForm(emptyForm); setShowForm(!showForm); }}><Plus size={18} /> Add</Button>}
       />
+
+      {actionError && <Alert variant="error">{actionError}</Alert>}
 
       {(showForm || editingId) && (
         <Card className="space-y-3 !p-3">

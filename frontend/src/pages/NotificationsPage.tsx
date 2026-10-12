@@ -2,15 +2,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell } from 'lucide-react';
 import { PageHeader, FilterTabs, ListRow } from '../components/ui/PageHeader';
 import { EmptyState } from '../components/ui/Badge';
-import { formatRelative } from '../lib/utils';
+import { formatRelative, getApiErrorMessage } from '../lib/utils';
 import { notificationApi } from '../api';
 import { useBusinessStore } from '../stores';
 import { useState } from 'react';
+import { Alert } from '../components/ui/Alert';
 
 export default function NotificationsPage() {
   const { activeBusiness } = useBusinessStore();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [actionError, setActionError] = useState('');
 
   const { data: notifications } = useQuery({
     queryKey: ['notifications', activeBusiness?.id],
@@ -19,7 +21,11 @@ export default function NotificationsPage() {
 
   const markReadMutation = useMutation({
     mutationFn: notificationApi.markRead,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    onSuccess: () => {
+      setActionError('');
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not mark that notification as read.')),
   });
 
   const filtered = notifications?.filter((n) => filter === 'all' || !n.read) || [];
@@ -27,6 +33,8 @@ export default function NotificationsPage() {
   return (
     <div className="page-stack">
       <PageHeader title="Notifications" subtitle="Stay updated on your business" />
+
+      {actionError && <Alert variant="error">{actionError}</Alert>}
 
       <FilterTabs
         options={[

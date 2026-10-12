@@ -9,7 +9,7 @@ import { Select } from '../components/ui/Select';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Alert } from '../components/ui/Alert';
 import { ProductSearchBox } from '../components/products/ProductSearchBox';
-import { formatCurrency, getFirstInStockVariant, isProductOutOfStock } from '../lib/utils';
+import { formatCurrency, getApiErrorMessage, getFirstInStockVariant, isProductOutOfStock } from '../lib/utils';
 import { productApi, saleApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
 import { useBusinessStore } from '../stores';
@@ -149,9 +149,9 @@ export default function NewSalePage() {
         paymentMethod,
         items: cart.map((item) => ({
           productId: item.product.id,
-          variantId: item.variant?.id,
+          ...(item.variant?.id ? { variantId: item.variant.id } : {}),
           quantity: item.quantity,
-          sellingPrice: item.sellingPrice,
+          sellingPrice: Math.round(item.sellingPrice * 100) / 100,
         })),
       };
 
@@ -175,7 +175,7 @@ export default function NewSalePage() {
       navigate(!offline && productIds.length === 1 ? `/inventory/${productIds[0]}` : '/sales');
     },
     onError: (error) => {
-      setStockError(error instanceof Error ? error.message : 'Could not complete sale.');
+      setStockError(getApiErrorMessage(error, 'Could not complete sale.'));
     },
   });
 
@@ -297,7 +297,7 @@ export default function NewSalePage() {
           </div>
 
           <Button
-            className="w-full mt-4"
+            className="page-action w-full mt-4"
             size="lg"
             onClick={() => mutation.mutate()}
             loading={mutation.isPending}

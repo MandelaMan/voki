@@ -144,6 +144,20 @@ export const saleService = {
               status: getStockStatus(newRemaining, threshold),
             },
           });
+
+          const variants = await tx.productVariant.findMany({
+            where: { productId: product.id, deletedAt: null },
+          });
+          const totalRemaining = variants.reduce((sum, entry) => sum + entry.remainingQuantity, 0);
+          const totalSold = variants.reduce((sum, entry) => sum + entry.quantitySold, 0);
+          await tx.product.update({
+            where: { id: product.id },
+            data: {
+              remainingQuantity: totalRemaining,
+              quantitySold: totalSold,
+              status: getStockStatus(totalRemaining, threshold),
+            },
+          });
         } else {
           if (product.remainingQuantity < item.quantity) {
             throw new ValidationError(`Insufficient stock for ${product.name}`);

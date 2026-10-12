@@ -116,10 +116,10 @@ export default function InventoryPage() {
     <div className="page-stack pb-16 lg:pb-0">
       <PageHeader
         title="All Inventory Items"
-        subtitle="Manage stock, pricing, and availability in one place."
+        subtitle="Products you sell. Stock starts at zero until you record a purchase."
         action={
           <Button to="/inventory/new">
-            <Plus size={16} /> Add Item
+            <Plus size={16} /> Add Product
           </Button>
         }
       />
@@ -188,8 +188,8 @@ export default function InventoryPage() {
       ) : !products.length ? (
         <EmptyState
           title="No products yet"
-          description="Add your first product to start tracking inventory"
-          action={<Button to="/inventory/new">Add Item</Button>}
+          description="Create a product here. Add its stock later with Record Purchase."
+          action={<Button to="/inventory/new">Add Product</Button>}
         />
       ) : (
         <div

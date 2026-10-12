@@ -11,8 +11,8 @@ const variantSchema = z.object({
 
 export const createProductSchema = z.object({
   businessId: z.string().uuid(),
-  categoryId: z.string().uuid().optional(),
-  supplierId: z.string().uuid().optional(),
+  categoryId: z.string().uuid().nullish(),
+  supplierId: z.string().uuid().nullish(),
   purchaseId: z.string().uuid().optional(),
   name: z.string().min(1),
   brand: z.string().optional(),

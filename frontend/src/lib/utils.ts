@@ -89,11 +89,21 @@ export function getStockStatusColor(status: string) {
 
 export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.') {
   if (error && typeof error === 'object' && 'response' in error) {
-    const data = (error as { response?: { data?: { message?: string; error?: string } } }).response?.data;
-    if (data?.message) return data.message;
-    if (data?.error) return data.error;
+    const data = (error as { response?: { data?: { message?: unknown; error?: unknown } } }).response?.data;
+    const nested = data?.error;
+    if (nested && typeof nested === 'object' && 'message' in nested) {
+      const message = (nested as { message?: unknown }).message;
+      if (typeof message === 'string' && message.trim()) return message;
+    }
+    if (typeof data?.message === 'string' && data.message.trim()) return data.message;
+    if (typeof data?.error === 'string' && data.error.trim()) return data.error;
   }
-  if (error instanceof Error && error.message) return error.message;
+  if (error instanceof Error && error.message === 'Network Error') {
+    return 'Could not reach the server. Check your connection and try again.';
+  }
+  if (error instanceof Error && error.message && !error.message.startsWith('Request failed with status code')) {
+    return error.message;
+  }
   return fallback;
 }
 

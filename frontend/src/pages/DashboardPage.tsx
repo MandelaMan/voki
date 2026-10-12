@@ -72,8 +72,8 @@ export default function DashboardPage() {
         <h3 className="text-heading text-slate-800 dark:text-slate-200 mb-3">Quick Actions</h3>
         <div className="grid grid-cols-1 min-[420px]:grid-cols-2 xl:grid-cols-4 gap-2.5">
           <QuickAction to="/sales/new" icon={<ShoppingBag size={20} />} label="Record Sale" primary />
-          <QuickAction to="/inventory/new" icon={<Plus size={20} />} label="Add Product" />
-          <QuickAction to="/purchases/new" icon={<Truck size={20} />} label="New Purchase" />
+          <QuickAction to="/inventory/new" icon={<Plus size={20} />} label="Add Product" hint="Create the item. No stock yet." />
+          <QuickAction to="/purchases/new" icon={<Truck size={20} />} label="Record Purchase" hint="Add the units you bought." />
           <QuickAction to="/reports" icon={<BarChart3 size={20} />} label="Reports" />
         </div>
       </div>

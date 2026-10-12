@@ -5,9 +5,11 @@ import { Pencil, Plus, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
+import { Alert } from '../components/ui/Alert';
 import { PageHeader } from '../components/ui/PageHeader';
 import { categoryApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
+import { getApiErrorMessage } from '../lib/utils';
 import { useBusinessStore } from '../stores';
 
 export default function CategoriesPage() {
@@ -17,6 +19,7 @@ export default function CategoriesPage() {
   const [name, setName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [actionError, setActionError] = useState('');
 
   const { data: categories } = useQuery({
     queryKey: ['categories', activeBusiness?.id],
@@ -25,25 +28,33 @@ export default function CategoriesPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: () => categoryApi.create({ businessId: activeBusiness!.id, name }),
+    mutationFn: () => categoryApi.create({ businessId: activeBusiness!.id, name: name.trim() }),
     onSuccess: () => {
+      setActionError('');
       refreshCommerce(queryClient);
       setName('');
       setShowForm(false);
     },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not save that category.')),
   });
 
   const updateMutation = useMutation({
     mutationFn: () => categoryApi.update(editingId!, { businessId: activeBusiness!.id, name: editName }),
     onSuccess: () => {
+      setActionError('');
       refreshCommerce(queryClient);
       setEditingId(null);
     },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not update that category.')),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => categoryApi.delete(id, activeBusiness!.id),
-    onSuccess: () => refreshCommerce(queryClient),
+    onSuccess: () => {
+      setActionError('');
+      refreshCommerce(queryClient);
+    },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not delete that category.')),
   });
 
   return (
@@ -54,12 +65,14 @@ export default function CategoriesPage() {
         action={<Button size="sm" onClick={() => setShowForm(!showForm)}><Plus size={18} /> Add</Button>}
       />
 
+      {actionError && <Alert variant="error">{actionError}</Alert>}
+
       {showForm && (
         <Card className="flex flex-col gap-2 sm:flex-row sm:items-end !p-3">
           <div className="flex-1 min-w-0 w-full">
             <Input placeholder="Category name" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          <Button onClick={() => createMutation.mutate()} loading={createMutation.isPending} className="w-full sm:w-auto">Save</Button>
+          <Button onClick={() => createMutation.mutate()} loading={createMutation.isPending} disabled={!name.trim()} className="w-full sm:w-auto">Save</Button>
         </Card>
       )}
 

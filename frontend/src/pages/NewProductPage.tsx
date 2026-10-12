@@ -85,8 +85,8 @@ export default function NewProductPage() {
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(productSchema) as never,
     defaultValues: {
-      name: '', brand: '', description: '', categoryId: '', supplierId: '', buyingPrice: 0, sellingPrice: 0, quantity: 1,
-      variants: [{ variantType: 'Size', variantValue: '', buyingPrice: 0, sellingPrice: 0, quantity: 1 }],
+      name: '', brand: '', description: '', categoryId: '', supplierId: '', buyingPrice: 0, sellingPrice: 0, quantity: 0,
+      variants: [{ variantType: 'Size', variantValue: '', buyingPrice: 0, sellingPrice: 0, quantity: 0 }],
     },
   });
 
@@ -123,12 +123,12 @@ export default function NewProductPage() {
         supplierId: data.supplierId?.trim() ? data.supplierId : undefined,
         buyingPrice: Number(data.buyingPrice),
         sellingPrice: Number(data.sellingPrice),
-        quantity: hasVariants ? 0 : Number(data.quantity),
+        quantity: 0,
         variants: hasVariants ? data.variants?.map((v) => ({
           ...v,
           buyingPrice: Number(v.buyingPrice),
           sellingPrice: Number(v.sellingPrice),
-          quantity: Number(v.quantity),
+          quantity: 0,
         })) : undefined,
       };
       const product = await productApi.create(payload);
@@ -151,7 +151,7 @@ export default function NewProductPage() {
   if (!activeBusiness) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Add Product" subtitle="Create a new inventory item" />
+        <PageHeader title="Add Product" subtitle="Create the item you sell. Stock starts at zero." />
         <Alert variant="warning">
           You need to set up a business before adding products.{' '}
           <Link to="/onboarding" className="font-semibold underline">Set up your business</Link>
@@ -162,7 +162,12 @@ export default function NewProductPage() {
 
   return (
     <div className="page-stack">
-      <PageHeader title="Add Product" subtitle="Fill in the product details below" />
+      <PageHeader title="Add Product" subtitle="Name, prices, and photos. This does not add stock." />
+
+      <Alert variant="info">
+        Stock stays at zero until you{' '}
+        <Link to="/purchases/new" className="font-semibold underline">record a purchase</Link>.
+      </Alert>
 
       <form
         onSubmit={handleSubmit((d) => {
@@ -204,14 +209,12 @@ export default function NewProductPage() {
           />
         </FormSection>
 
-        <FormSection title="Pricing & Stock">
+        <FormSection title="Prices">
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Buying Price" type="number" step="0.01" min="0" error={errors.buyingPrice?.message} {...register('buyingPrice')} />
-            <Input label="Selling Price" type="number" step="0.01" min="0" error={errors.sellingPrice?.message} {...register('sellingPrice')} />
+            <Input label="Buy price" type="number" step="0.01" min="0" error={errors.buyingPrice?.message} {...register('buyingPrice')} />
+            <Input label="Sell price" type="number" step="0.01" min="0" error={errors.sellingPrice?.message} {...register('sellingPrice')} />
           </div>
-          {!hasVariants && (
-            <Input label="Quantity" type="number" min="0" step="1" error={errors.quantity?.message} {...register('quantity')} />
-          )}
+          <p className="text-caption text-slate-500">These are the usual prices. Quantity is added when you buy stock.</p>
         </FormSection>
 
         <FormSection title="Photos">
@@ -238,7 +241,7 @@ export default function NewProductPage() {
         {hasVariants && (
           <FormSection title="Variants">
             <div className="flex justify-end -mt-2 mb-1">
-              <Button type="button" size="sm" variant="secondary" onClick={() => append({ variantType: 'Size', variantValue: '', buyingPrice: 0, sellingPrice: 0, quantity: 1 })}>
+              <Button type="button" size="sm" variant="secondary" onClick={() => append({ variantType: 'Size', variantValue: '', buyingPrice: 0, sellingPrice: 0, quantity: 0 })}>
                 <Plus size={16} /> Add Variant
               </Button>
             </div>
@@ -251,18 +254,17 @@ export default function NewProductPage() {
                     <button type="button" onClick={() => remove(index)} className="p-2.5 text-red-500 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 self-start justify-self-end"><X size={18} /></button>
                   )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Input placeholder="Buy" type="number" step="0.01" min="0" {...register(`variants.${index}.buyingPrice`)} />
                   <Input placeholder="Sell" type="number" step="0.01" min="0" {...register(`variants.${index}.sellingPrice`)} />
-                  <Input placeholder="Qty" type="number" min="0" step="1" {...register(`variants.${index}.quantity`)} />
                 </div>
               </div>
             ))}
           </FormSection>
         )}
 
-        <Button type="submit" className="w-full" size="lg" loading={isSubmitting || mutation.isPending} disabled={saveSuccess}>
-          {saveSuccess ? 'Saved!' : 'Save Product →'}
+        <Button type="submit" className="page-action w-full" size="lg" loading={isSubmitting || mutation.isPending} disabled={saveSuccess}>
+          {saveSuccess ? 'Saved!' : 'Save product'}
         </Button>
       </form>
     </div>

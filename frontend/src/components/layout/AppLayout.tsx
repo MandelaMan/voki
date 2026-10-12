@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -73,13 +74,13 @@ function isSideActive(pathname: string, to: string) {
 
 function sectionLabel(pathname: string) {
   if (pathname === '/') return 'Dashboard';
-  if (pathname.startsWith('/inventory/new')) return 'Add Item';
+  if (pathname.startsWith('/inventory/new')) return 'Add Product';
   if (pathname.includes('/restock')) return 'Restock';
   if (pathname.startsWith('/inventory/')) return 'Item';
   if (pathname.startsWith('/inventory')) return 'Items';
   if (pathname.startsWith('/sales/new')) return 'Record Sale';
   if (pathname.startsWith('/sales')) return 'Sales';
-  if (pathname.startsWith('/purchases/new')) return 'New Purchase';
+  if (pathname.startsWith('/purchases/new')) return 'Record Purchase';
   if (pathname.startsWith('/purchases')) return 'Purchases';
   if (pathname.startsWith('/reports')) return 'Reports';
   if (pathname.startsWith('/search')) return 'Search';
@@ -98,8 +99,8 @@ export function BottomNav() {
   const { pathname } = useLocation();
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 lg:hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200/80 dark:border-slate-800 safe-bottom">
-      <div className="grid grid-cols-5 px-1 pt-1 pb-1">
+    <nav className="app-tabbar shrink-0 z-40 border-t border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 lg:hidden">
+      <div className="grid grid-cols-5 px-1 pt-0.5">
         {bottomNav.map(({ to, icon: Icon, label }) => {
           const active = isBottomActive(pathname, to);
           return (
@@ -107,7 +108,7 @@ export function BottomNav() {
               key={to}
               to={to}
               end={to === '/'}
-              className="flex flex-col items-center justify-center gap-0.5 min-w-0 py-1 rounded-xl"
+              className="flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl pb-0.5 pt-1"
             >
               <span
                 className={cn(
@@ -242,13 +243,37 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const section = sectionLabel(pathname);
   const { logout, pending } = useLogout();
+  const mainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const sync = () => {
+      const height = viewport?.height ?? window.innerHeight;
+      const top = Math.max(0, viewport?.offsetTop ?? 0);
+      document.documentElement.style.setProperty('--app-height', `${height}px`);
+      document.documentElement.style.setProperty('--app-top', `${top}px`);
+    };
+    sync();
+    viewport?.addEventListener('resize', sync);
+    viewport?.addEventListener('scroll', sync);
+    window.addEventListener('orientationchange', sync);
+    return () => {
+      viewport?.removeEventListener('resize', sync);
+      viewport?.removeEventListener('scroll', sync);
+      window.removeEventListener('orientationchange', sync);
+    };
+  }, []);
+
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [pathname]);
 
   return (
-    <div className="min-h-svh bg-[#eef3f9] dark:bg-slate-950 lg:flex">
+    <div className="app-shell min-h-svh bg-[#eef3f9] dark:bg-slate-950 lg:flex">
       <Sidebar />
 
-      <div className="flex-1 min-w-0 flex flex-col">
-        <header className="safe-top sticky top-0 z-30 bg-[#eef3f9]/95 dark:bg-slate-950/95 backdrop-blur">
+      <div className="flex w-full min-w-0 flex-1 flex-col max-lg:min-h-0">
+        <header className="safe-top z-30 shrink-0 bg-[#eef3f9]/95 backdrop-blur dark:bg-slate-950/95 lg:sticky lg:top-0">
           <div className="flex items-center gap-2 px-3 sm:px-4 lg:px-6 h-14">
             <button
               onClick={() => navigate('/businesses')}
@@ -305,7 +330,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="w-full max-w-[1200px] px-3 sm:px-4 lg:px-6 pt-1 pb-[calc(var(--voki-bottom-nav-offset)+1rem)] lg:pb-8">
+        <main ref={mainRef} className="mx-auto w-full max-w-[1200px] px-3 pb-4 pt-1 sm:px-4 max-lg:min-h-0 max-lg:flex-1 max-lg:overflow-y-auto lg:px-6 lg:pb-8">
           <PageTransition>{children}</PageTransition>
         </main>
       </div>

@@ -23,14 +23,14 @@ export default function PurchasesPage() {
     <div className="page-stack">
       <PageHeader
         title="Purchases"
-        subtitle="Stock entries and receipts"
-        action={<Button to="/purchases/new" size="sm"><Plus size={18} /> New</Button>}
+        subtitle="Buying stock adds units to products you already created"
+        action={<Button to="/purchases/new" size="sm"><Plus size={18} /> Record</Button>}
       />
 
       {isLoading ? (
         <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}</div>
       ) : !data?.purchases.length ? (
-        <EmptyState title="No purchases yet" description="Record your first stock purchase" action={<Button to="/purchases/new">Add Purchase</Button>} />
+        <EmptyState title="No purchases yet" description="Create the product first, then record a purchase to add stock" action={<Button to="/purchases/new">Record Purchase</Button>} />
       ) : (
         <div className="space-y-2">
           {data.purchases.map((purchase) => (

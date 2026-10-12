@@ -54,7 +54,7 @@ export default function ProfilePage() {
           <Input label="Last Name" {...register('lastName')} />
           <Input label="Phone" icon={<Phone size={18} />} {...register('phone')} />
           <Input label="Email" icon={<Mail size={18} />} value={user?.email} disabled />
-          <Button type="submit" className="w-full" size="lg" loading={mutation.isPending}>
+          <Button type="submit" className="page-action w-full" size="lg" loading={mutation.isPending}>
             {saved ? 'Saved!' : 'Save Changes'}
           </Button>
         </form>

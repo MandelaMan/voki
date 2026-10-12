@@ -6,10 +6,12 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Card } from '../components/ui/Card';
+import { Alert } from '../components/ui/Alert';
 import { Skeleton } from '../components/ui/Badge';
 import { PageHeader } from '../components/ui/PageHeader';
 import { businessApi } from '../api';
 import { currencyOptions } from '../lib/currencies';
+import { getApiErrorMessage } from '../lib/utils';
 import { useBusinessStore } from '../stores';
 import type { Business } from '../types';
 
@@ -18,6 +20,7 @@ export default function BusinessesPage() {
   const queryClient = useQueryClient();
   const { activeBusiness, setActiveBusiness, setBusinesses } = useBusinessStore();
   const [editing, setEditing] = useState<Business | null>(null);
+  const [actionError, setActionError] = useState('');
 
   const { data: businesses, isLoading } = useQuery({
     queryKey: ['businesses'],
@@ -31,22 +34,29 @@ export default function BusinessesPage() {
   const createMutation = useMutation({
     mutationFn: () => {
       const name = prompt('Business name:');
-      if (!name) return Promise.reject();
-      return businessApi.create({ name });
+      if (!name?.trim()) return Promise.reject(new Error('cancelled'));
+      return businessApi.create({ name: name.trim() });
     },
     onSuccess: (business) => {
+      setActionError('');
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
       setActiveBusiness(business);
+    },
+    onError: (error) => {
+      if (error instanceof Error && error.message === 'cancelled') return;
+      setActionError(getApiErrorMessage(error, 'Could not add that business.'));
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: () => businessApi.update(editing!.id, { name: editing!.name, currency: editing!.currency }),
     onSuccess: (updated) => {
+      setActionError('');
       queryClient.invalidateQueries({ queryKey: ['businesses'] });
       if (activeBusiness?.id === updated.id) setActiveBusiness(updated);
       setEditing(null);
     },
+    onError: (error) => setActionError(getApiErrorMessage(error, 'Could not save that business.')),
   });
 
   if (isLoading) return <Skeleton className="h-48 rounded-2xl" />;
@@ -62,6 +72,8 @@ export default function BusinessesPage() {
           </Button>
         }
       />
+
+      {actionError && <Alert variant="error">{actionError}</Alert>}
 
       {editing && (
         <Card className="space-y-3 !p-3">

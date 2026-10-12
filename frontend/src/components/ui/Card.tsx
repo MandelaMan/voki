@@ -109,12 +109,14 @@ export function QuickAction({
   onClick,
   icon,
   label,
+  hint,
   primary,
 }: {
   to?: string;
   onClick?: () => void;
   icon: React.ReactNode;
   label: string;
+  hint?: string;
   primary?: boolean;
 }) {
   const inner = (
@@ -126,10 +128,15 @@ export function QuickAction({
         {icon}
       </div>
       <span className={cn(
-        'flex-1 min-w-0 text-sm font-semibold text-left leading-tight',
+        'flex-1 min-w-0 text-left leading-tight',
         primary ? 'text-white' : 'text-slate-800 dark:text-white'
       )}>
-        {label}
+        <span className="block text-sm font-semibold">{label}</span>
+        {hint && (
+          <span className={cn('block text-[11px] font-medium mt-0.5', primary ? 'text-white/80' : 'text-slate-500 dark:text-slate-400')}>
+            {hint}
+          </span>
+        )}
       </span>
       <ChevronRight
         size={14}

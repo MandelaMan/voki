@@ -1,6 +1,6 @@
 import { prisma } from '../utils/prisma';
-import { NotFoundError } from '../utils/errors';
-import { activityRepository } from '../repositories/activity.repository';
+import { NotFoundError, ValidationError } from '../utils/errors';
+import { activityRepository, getStockStatus } from '../repositories/activity.repository';
 
 export const purchaseService = {
   async list(query: {
@@ -63,39 +63,69 @@ export const purchaseService = {
   }) {
     const totalCost = data.items.reduce((sum, item) => sum + item.quantity * item.unitCost, 0);
 
-    const purchase = await prisma.purchase.create({
-      data: {
-        businessId: data.businessId,
-        supplierId: data.supplierId,
-        purchaseDate: new Date(data.purchaseDate),
-        receiptNumber: data.receiptNumber,
-        receiptPath: data.receiptPath,
-        invoicePath: data.invoicePath,
-        notes: data.notes,
-        totalCost,
-        items: {
-          create: data.items.map((item) => ({
-            name: item.name,
-            quantity: item.quantity,
-            unitCost: item.unitCost,
-            totalCost: item.quantity * item.unitCost,
-            productId: item.productId,
-          })),
+    return prisma.$transaction(async (tx) => {
+      const business = await tx.business.findUnique({ where: { id: data.businessId } });
+      const threshold = business?.lowStockThreshold ?? 5;
+
+      for (const item of data.items) {
+        if (!item.productId) continue;
+        const product = await tx.product.findFirst({
+          where: { id: item.productId, businessId: data.businessId, deletedAt: null },
+        });
+        if (!product) throw new NotFoundError(`Product not found for ${item.name}`);
+        if (product.hasVariants) {
+          throw new ValidationError(
+            `${product.name} has sizes or colors. Open the product and use Restock so the right one gets the units.`
+          );
+        }
+
+        const newRemaining = product.remainingQuantity + item.quantity;
+        await tx.product.update({
+          where: { id: product.id },
+          data: {
+            quantityPurchased: product.quantityPurchased + item.quantity,
+            remainingQuantity: newRemaining,
+            buyingPrice: item.unitCost,
+            status: getStockStatus(newRemaining, threshold),
+            ...(data.supplierId && { supplierId: data.supplierId }),
+          },
+        });
+      }
+
+      const purchase = await tx.purchase.create({
+        data: {
+          businessId: data.businessId,
+          supplierId: data.supplierId,
+          purchaseDate: new Date(data.purchaseDate),
+          receiptNumber: data.receiptNumber,
+          receiptPath: data.receiptPath,
+          invoicePath: data.invoicePath,
+          notes: data.notes,
+          totalCost,
+          items: {
+            create: data.items.map((item) => ({
+              name: item.name,
+              quantity: item.quantity,
+              unitCost: item.unitCost,
+              totalCost: item.quantity * item.unitCost,
+              productId: item.productId,
+            })),
+          },
         },
-      },
-      include: { items: true, supplier: true },
-    });
+        include: { items: true, supplier: true },
+      });
 
-    await activityRepository.log({
-      userId,
-      businessId: data.businessId,
-      action: 'CREATE',
-      entityType: 'Purchase',
-      entityId: purchase.id,
-      metadata: { totalCost },
-    });
+      await activityRepository.log({
+        userId,
+        businessId: data.businessId,
+        action: 'CREATE',
+        entityType: 'Purchase',
+        entityId: purchase.id,
+        metadata: { totalCost },
+      });
 
-    return purchase;
+      return purchase;
+    });
   },
 
   async updateReceipt(id: string, businessId: string, receiptPath?: string, invoicePath?: string) {

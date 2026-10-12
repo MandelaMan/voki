@@ -77,6 +77,11 @@ export default function NewPurchasePage() {
   const itemCount = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 
   const addProductLine = (product: Product) => {
+    if (product.hasVariants) {
+      setSearch('');
+      setSaveError(`${product.name} has sizes or colors. Open the product and use Restock so the right one gets the units.`);
+      return;
+    }
     const existingIndex = items.findIndex((item) => item.productId === product.id);
     if (existingIndex >= 0) {
       const current = items[existingIndex];
@@ -112,7 +117,7 @@ export default function NewPurchasePage() {
           name: item.name.trim(),
           quantity: Number(item.quantity),
           unitCost: Number(item.unitCost),
-          productId: item.productId,
+          ...(item.productId ? { productId: item.productId } : {}),
         })),
       }),
     onSuccess: async () => {
@@ -144,7 +149,7 @@ export default function NewPurchasePage() {
   if (!activeBusiness) {
     return (
       <div className="page-stack">
-        <PageHeader title="New Purchase" />
+        <PageHeader title="Record Purchase" />
         <Alert variant="warning">You need to set up a business before recording purchases.</Alert>
       </div>
     );
@@ -161,12 +166,13 @@ export default function NewPurchasePage() {
       </button>
 
       <PageHeader
-        title="New Purchase"
-        subtitle="Record what you bought and how much you paid"
+        title="Record Purchase"
+        subtitle="Add units to products you already created"
       />
 
       <Alert variant="info">
-        Fill in the date, add items from your inventory or as custom lines, then save.
+        Choose a product to increase its stock. A custom line is only a cost and does not change inventory. New items are created with{' '}
+        <Link to="/inventory/new" className="font-semibold underline">Add Product</Link>.
       </Alert>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -208,10 +214,10 @@ export default function NewPurchasePage() {
         </FormSection>
 
         <FormSection>
-          <StepBadge step={2} label="Items purchased" />
+          <StepBadge step={2} label="What you bought" />
 
           <div className="space-y-2">
-            <p className="text-caption text-slate-500">Search your inventory to add items quickly</p>
+            <p className="text-caption text-slate-500">Search a product to add those units to stock</p>
             <ProductSearchBox
               businessId={activeBusiness?.id}
               value={search}
@@ -224,7 +230,7 @@ export default function NewPurchasePage() {
           </div>
 
           <Button type="button" variant="soft" size="sm" className="w-full" onClick={addCustomLine}>
-            <Plus size={16} /> Add custom item
+            <Plus size={16} /> Add a cost-only line
           </Button>
 
           {!fields.length ? (
@@ -232,7 +238,7 @@ export default function NewPurchasePage() {
               <Package size={28} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
               <p className="text-body-medium text-slate-600 dark:text-slate-400">No items yet</p>
               <p className="text-caption text-slate-500 mt-1">
-                Search for a product above or add a custom line
+                Search for a product, or add a cost that should not change stock
               </p>
             </div>
           ) : (
@@ -245,9 +251,13 @@ export default function NewPurchasePage() {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="text-micro text-slate-400 font-semibold">#{index + 1}</span>
-                        {line?.productId && (
+                        {line?.productId ? (
                           <span className="text-micro px-1.5 py-0.5 rounded-md bg-primary-50 dark:bg-primary-900/25 text-primary-700 dark:text-primary-300">
-                            In inventory
+                            Adds stock
+                          </span>
+                        ) : (
+                          <span className="text-micro px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500">
+                            Cost only
                           </span>
                         )}
                       </div>
@@ -269,7 +279,7 @@ export default function NewPurchasePage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <Input
-                        label="Quantity"
+                        label={line?.productId ? 'Units to add' : 'Quantity'}
                         type="number"
                         min={1}
                         step={1}
@@ -312,12 +322,12 @@ export default function NewPurchasePage() {
           </div>
           <Button
             type="submit"
-            className="w-full"
+            className="page-action w-full"
             size="lg"
             loading={mutation.isPending}
             disabled={!fields.length}
           >
-            Save Purchase
+            Save purchase
           </Button>
         </Card>
       </form>
