@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -97,9 +98,39 @@ function sectionLabel(pathname: string) {
 
 export function BottomNav() {
   const { pathname } = useLocation();
+  const navRef = useRef<HTMLElement>(null);
 
-  return (
-    <nav className="app-tabbar shrink-0 z-40 border-t border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 lg:hidden">
+  useEffect(() => {
+    const pin = () => {
+      const el = navRef.current;
+      if (!el) return;
+      el.style.setProperty('position', 'fixed', 'important');
+      el.style.setProperty('left', '0px', 'important');
+      el.style.setProperty('right', '0px', 'important');
+      el.style.setProperty('bottom', '0px', 'important');
+      el.style.setProperty('top', 'auto', 'important');
+      el.style.setProperty('transform', 'none', 'important');
+      el.style.setProperty('margin', '0px', 'important');
+    };
+    pin();
+    const viewport = window.visualViewport;
+    viewport?.addEventListener('resize', pin);
+    viewport?.addEventListener('scroll', pin);
+    window.addEventListener('resize', pin);
+    window.addEventListener('orientationchange', pin);
+    return () => {
+      viewport?.removeEventListener('resize', pin);
+      viewport?.removeEventListener('scroll', pin);
+      window.removeEventListener('resize', pin);
+      window.removeEventListener('orientationchange', pin);
+    };
+  }, []);
+
+  const nav = (
+    <nav
+      ref={navRef}
+      className="app-tabbar shrink-0 z-40 border-t border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 lg:hidden"
+    >
       <div className="grid grid-cols-5 px-1 pt-0.5">
         {bottomNav.map(({ to, icon: Icon, label }) => {
           const active = isBottomActive(pathname, to);
@@ -134,6 +165,8 @@ export function BottomNav() {
       </div>
     </nav>
   );
+
+  return createPortal(nav, document.body);
 }
 
 function Sidebar() {

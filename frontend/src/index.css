@@ -131,15 +131,12 @@ body {
   }
 }
 
-/* Tab row, plus a smaller home-indicator inset so the icons sit near the screen edge. */
+/* Icon row plus the home-indicator area, so content clears a bar that is pinned to the screen edge. */
 :root {
-  --voki-bottom-nav-offset: calc(3.25rem + max(0.15rem, env(safe-area-inset-bottom, 0px) - 12px));
+  --voki-bottom-nav-offset: calc(3.25rem + env(safe-area-inset-bottom, 0px));
   --voki-fab-bottom: calc(var(--voki-bottom-nav-offset) + 0.75rem);
-  --app-height: 100dvh;
-  --app-top: 0px;
 }
 
-/* Size the shell to the visible screen so the in-flow tab bar lands on the bottom edge. */
 @media (max-width: 1023px) {
   html:has(.app-shell),
   body:has(.app-shell) {
@@ -149,18 +146,28 @@ body {
 
   .app-shell {
     position: fixed;
-    top: var(--app-top);
-    right: 0;
-    left: 0;
+    inset: 0;
     display: flex;
     flex-direction: column;
-    height: var(--app-height);
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    min-height: -webkit-fill-available;
     overflow: hidden;
+    padding-bottom: var(--voki-bottom-nav-offset);
   }
-}
 
-.app-tabbar {
-  padding-bottom: max(0.15rem, calc(env(safe-area-inset-bottom, 0px) - 12px));
+  .app-tabbar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 80;
+    width: 100%;
+    margin: 0;
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 /* Solid primary surfaces always use white foreground */
