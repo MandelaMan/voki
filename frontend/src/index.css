@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary-50: #eef3ff;
+  --color-primary-100: #dce6ff;
+  --color-primary-200: #c0d2ff;
+  --color-primary-300: #94b4ff;
+  --color-primary-400: #6b91f7;
+  --color-primary-500: #4c74f0;
+  --color-primary-600: #3b5fe6;
+  --color-primary-700: #2f4dcc;
+  --color-primary-800: #2841a8;
+  --color-primary-900: #243a85;
+  --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 10px 28px -16px rgb(15 23 42 / 0.18);
+  --shadow-soft-lg: 0 12px 32px -12px rgb(15 23 42 / 0.12);
+  --shadow-primary: 0 8px 20px -6px rgb(59 95 230 / 0.45);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-[#eef3f9] text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: calc(0.8125rem + 0.5px);
+  line-height: 1.45;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Unified typography scale — 13.5px base */
+.text-display {
+  font-size: 1.25rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+@media (min-width: 640px) {
+  .text-display {
+    font-size: 1.5rem;
+  }
+}
+
+.text-heading {
+  font-size: calc(0.8125rem + 0.5px);
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.text-body {
+  font-size: calc(0.8125rem + 0.5px);
+  line-height: 1.45;
+  font-weight: 400;
+}
+
+.text-body-medium {
+  font-size: calc(0.8125rem + 0.5px);
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.text-label {
+  font-size: calc(0.6875rem + 0.5px);
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.text-caption {
+  font-size: calc(0.6875rem + 0.5px);
+  line-height: 1.45;
+  font-weight: 400;
+  color: inherit;
+}
+
+.text-micro {
+  font-size: calc(0.625rem + 0.5px);
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.text-stat {
+  font-size: calc(0.9375rem + 0.5px);
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.text-stat-lg {
+  font-size: calc(1.125rem + 0.5px);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Height from viewport bottom to top of bottom nav card */
+:root {
+  --voki-bottom-nav-offset: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+  --voki-fab-bottom: calc(var(--voki-bottom-nav-offset) + 0.75rem);
+}
+
+/* Solid primary surfaces always use white foreground */
+.bg-primary-600,
+.bg-primary-700,
+.bg-primary-800 {
+  color: #fff;
+}
+
+.bg-primary-600 svg,
+.bg-primary-700 svg,
+.bg-primary-800 svg {
+  color: #fff;
+}
+
+.surface-card {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800;
+  box-shadow: var(--shadow-soft);
+}
+
+.surface-card-bordered {
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800;
+  box-shadow: var(--shadow-soft);
+}
+
+.surface-input {
+  @apply bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700;
+}
+
+.surface-input:focus-within {
+  @apply border-primary-300 dark:border-primary-600 ring-[3px] ring-primary-500/15 bg-white dark:bg-slate-900;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes page-transition {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-transition {
+  animation: page-transition 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out;
+}
+
+.skeleton {
+  @apply bg-slate-200 dark:bg-slate-800 animate-pulse rounded-2xl;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Text caret must stay visible — Tailwind utilities alone are easy to miss on one-off inputs */
+input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='file']):not([type='button']):not([type='submit']):not([type='reset']):not([type='range']):not([type='color']),
+textarea {
+  cursor: text;
+  caret-color: #0f172a;
+}
+
+.dark input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='file']):not([type='button']):not([type='submit']):not([type='reset']):not([type='range']):not([type='color']),
+.dark textarea {
+  caret-color: #f1f5f9;
+}
+
+select {
+  cursor: pointer;
+}
+
+/* Safari/Chrome autofill can hide typed text and the caret */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill {
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active,
+.dark textarea:-webkit-autofill {
+  -webkit-text-fill-color: #f1f5f9 !important;
+  caret-color: #f1f5f9 !important;
+}

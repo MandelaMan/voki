@@ -1,0 +1,360 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  avatar        String?
+  theme         Theme          @default(LIGHT)
+  resetToken    String?
+  resetExpires  DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  businesses    Business[]
+  refreshTokens RefreshToken[]
+  notifications Notification[]
+  activityLogs  ActivityLog[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Business {
+  id                String        @id @default(uuid())
+  userId            String
+  name              String
+  description       String?       @db.Text
+  logo              String?
+  currency          String        @default("USD")
+  lowStockThreshold Int           @default(5)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories        Category[]
+  suppliers         Supplier[]
+  purchases         Purchase[]
+  products          Product[]
+  sales             Sale[]
+  customers         Customer[]
+  notifications     Notification[]
+  activityLogs      ActivityLog[]
+  settings          Setting[]
+
+  @@index([userId])
+  @@map("businesses")
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  businessId  String
+  name        String
+  description String?   @db.Text
+  color       String?
+  icon        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  products    Product[]
+
+  @@unique([businessId, name])
+  @@index([businessId])
+  @@map("categories")
+}
+
+model Supplier {
+  id         String     @id @default(uuid())
+  businessId String
+  name       String
+  phone      String?
+  email      String?
+  notes      String?    @db.Text
+  address    String?    @db.Text
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  deletedAt  DateTime?
+  business   Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  purchases  Purchase[]
+  products   Product[]
+
+  @@index([businessId])
+  @@map("suppliers")
+}
+
+model Purchase {
+  id            String         @id @default(uuid())
+  businessId    String
+  supplierId    String?
+  purchaseDate  DateTime
+  receiptNumber String?
+  receiptPath   String?
+  invoicePath   String?
+  notes         String?        @db.Text
+  totalCost     Decimal        @default(0) @db.Decimal(12, 2)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  supplier      Supplier?      @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  items         PurchaseItem[]
+  products      Product[]
+
+  @@index([businessId])
+  @@index([supplierId])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id         String   @id @default(uuid())
+  purchaseId String
+  productId  String?
+  name       String
+  quantity   Int
+  unitCost   Decimal  @db.Decimal(12, 2)
+  totalCost  Decimal  @db.Decimal(12, 2)
+  createdAt  DateTime @default(now())
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product    Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([purchaseId])
+  @@map("purchase_items")
+}
+
+model Product {
+  id                String           @id @default(uuid())
+  businessId        String
+  categoryId        String?
+  supplierId        String?
+  purchaseId        String?
+  name              String
+  sku               String
+  barcode           String?
+  brand             String?
+  description       String?          @db.Text
+  buyingPrice       Decimal          @db.Decimal(12, 2)
+  sellingPrice      Decimal          @db.Decimal(12, 2)
+  quantityPurchased Int              @default(0)
+  quantitySold      Int              @default(0)
+  remainingQuantity Int              @default(0)
+  status            StockStatus      @default(IN_STOCK)
+  hasVariants       Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  deletedAt         DateTime?
+  business          Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category          Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  supplier          Supplier?        @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  purchase          Purchase?        @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+  variants          ProductVariant[]
+  images            ProductImage[]
+  purchaseItems     PurchaseItem[]
+  saleItems         SaleItem[]
+
+  @@unique([businessId, sku])
+  @@index([businessId])
+  @@index([categoryId])
+  @@index([supplierId])
+  @@index([purchaseId])
+  @@index([name])
+  @@index([barcode])
+  @@map("products")
+}
+
+model ProductVariant {
+  id                String     @id @default(uuid())
+  productId         String
+  variantType       String
+  variantValue      String
+  sku               String?
+  barcode           String?
+  buyingPrice       Decimal    @db.Decimal(12, 2)
+  sellingPrice      Decimal    @db.Decimal(12, 2)
+  quantityPurchased Int        @default(0)
+  quantitySold      Int        @default(0)
+  remainingQuantity Int        @default(0)
+  status            StockStatus @default(IN_STOCK)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  deletedAt         DateTime?
+  product           Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  saleItems         SaleItem[]
+
+  @@unique([productId, variantType, variantValue])
+  @@index([productId])
+  @@map("product_variants")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  productId String
+  path      String
+  isPrimary Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model Sale {
+  id            String        @id @default(uuid())
+  businessId    String
+  customerId    String?
+  saleDate      DateTime      @default(now())
+  paymentMethod PaymentMethod @default(CASH)
+  totalAmount   Decimal       @default(0) @db.Decimal(12, 2)
+  totalProfit   Decimal       @default(0) @db.Decimal(12, 2)
+  notes         String?       @db.Text
+  synced        Boolean       @default(true)
+  offlineId     String?       @unique
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer      Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items         SaleItem[]
+
+  @@index([businessId])
+  @@index([customerId])
+  @@index([saleDate])
+  @@map("sales")
+}
+
+model SaleItem {
+  id            String          @id @default(uuid())
+  saleId        String
+  productId     String
+  variantId     String?
+  quantity      Int
+  sellingPrice  Decimal         @db.Decimal(12, 2)
+  buyingPrice   Decimal         @db.Decimal(12, 2)
+  profit        Decimal         @db.Decimal(12, 2)
+  createdAt     DateTime        @default(now())
+  sale          Sale            @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product       Product         @relation(fields: [productId], references: [id])
+  variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([saleId])
+  @@index([productId])
+  @@map("sale_items")
+}
+
+model Customer {
+  id         String    @id @default(uuid())
+  businessId String
+  name       String
+  phone      String?
+  email      String?
+  notes      String?   @db.Text
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  sales      Sale[]
+
+  @@index([businessId])
+  @@map("customers")
+}
+
+model Notification {
+  id         String           @id @default(uuid())
+  userId     String
+  businessId String?
+  type       NotificationType
+  title      String
+  message    String           @db.Text
+  read       Boolean          @default(false)
+  data       Json?
+  createdAt  DateTime         @default(now())
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business   Business?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([businessId])
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String
+  businessId String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business   Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([businessId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+model Setting {
+  id         String   @id @default(uuid())
+  businessId String
+  key        String
+  value      Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, key])
+  @@index([businessId])
+  @@map("settings")
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
+}
+
+enum StockStatus {
+  IN_STOCK
+  LOW_STOCK
+  OUT_OF_STOCK
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MPESA
+  BANK_TRANSFER
+  OTHER
+}
+
+enum NotificationType {
+  LOW_STOCK
+  OUT_OF_STOCK
+  DEAD_STOCK
+  DAILY_SUMMARY
+  WEEKLY_SUMMARY
+  GENERAL
+}

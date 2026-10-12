@@ -1,0 +1,17 @@
+{
+  "name": "voki",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mobile-first Inventory & Sales Management PWA",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:push": "npm run db:push --prefix backend",
+    "db:seed": "npm run db:seed --prefix backend",
+    "db:studio": "npm run db:studio --prefix backend"
+  }
+}
