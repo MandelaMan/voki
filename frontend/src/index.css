@@ -131,12 +131,10 @@ body {
   }
 }
 
-/* Tab row, plus a smaller home-indicator inset so the icons sit near the screen edge. */
+/* Tab row height. The bar itself sits on the screen edge. */
 :root {
-  --voki-bottom-nav-offset: calc(3.25rem + max(0.15rem, env(safe-area-inset-bottom, 0px) - 12px));
+  --voki-bottom-nav-offset: 3.5rem;
   --voki-fab-bottom: calc(var(--voki-bottom-nav-offset) + 0.75rem);
-  --app-height: 100dvh;
-  --app-top: 0px;
 }
 
 /* One screen-sized shell on phones, so the tab bar is at the visible bottom on every page. */
@@ -149,18 +147,16 @@ body {
 
   .app-shell {
     position: fixed;
-    top: var(--app-top);
-    right: 0;
-    left: 0;
+    inset: 0;
     display: flex;
     flex-direction: column;
-    height: var(--app-height);
+    height: auto;
     overflow: hidden;
   }
 }
 
 .app-tabbar {
-  padding-bottom: max(0.15rem, calc(env(safe-area-inset-bottom, 0px) - 12px));
+  padding-bottom: 0;
 }
 
 /* Keep the last action above the mobile tab bar so a tap hits the button. */
