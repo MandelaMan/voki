@@ -100,7 +100,7 @@ export function BottomNav() {
 
   return (
     <nav className="app-tabbar shrink-0 z-40 border-t border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 lg:hidden">
-      <div className="grid grid-cols-5 px-1">
+      <div className="grid grid-cols-5 px-1 pt-0.5">
         {bottomNav.map(({ to, icon: Icon, label }) => {
           const active = isBottomActive(pathname, to);
           return (
@@ -108,7 +108,7 @@ export function BottomNav() {
               key={to}
               to={to}
               end={to === '/'}
-              className="flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl py-1.5"
+              className="flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl pb-0.5 pt-1"
             >
               <span
                 className={cn(
@@ -244,6 +244,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const section = sectionLabel(pathname);
   const { logout, pending } = useLogout();
   const mainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const sync = () => {
+      const height = viewport?.height ?? window.innerHeight;
+      const top = Math.max(0, viewport?.offsetTop ?? 0);
+      document.documentElement.style.setProperty('--app-height', `${height}px`);
+      document.documentElement.style.setProperty('--app-top', `${top}px`);
+    };
+    sync();
+    viewport?.addEventListener('resize', sync);
+    viewport?.addEventListener('scroll', sync);
+    window.addEventListener('orientationchange', sync);
+    return () => {
+      viewport?.removeEventListener('resize', sync);
+      viewport?.removeEventListener('scroll', sync);
+      window.removeEventListener('orientationchange', sync);
+    };
+  }, []);
 
   useEffect(() => {
     mainRef.current?.scrollTo(0, 0);

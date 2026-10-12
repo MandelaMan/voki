@@ -322,7 +322,7 @@ export default function NewPurchasePage() {
           </div>
           <Button
             type="submit"
-            className="page-action w-full"
+            className="w-full"
             size="lg"
             loading={mutation.isPending}
             disabled={!fields.length}

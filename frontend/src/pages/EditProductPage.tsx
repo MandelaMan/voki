@@ -122,7 +122,7 @@ export default function EditProductPage() {
           {' · '}
           <Link to="/categories" className="font-semibold text-primary-600">Manage categories</Link>
         </p>
-        <Button type="submit" className="page-action w-full" loading={mutation.isPending}>Save changes</Button>
+        <Button type="submit" className="w-full" loading={mutation.isPending}>Save changes</Button>
       </form>
     </div>
   );

@@ -300,7 +300,7 @@ export default function RestockProductPage() {
           </p>
         </div>
 
-        <Button type="submit" className="page-action w-full" size="lg" loading={mutation.isPending}>
+        <Button type="submit" className="w-full" size="lg" loading={mutation.isPending}>
           <PackagePlus size={20} /> Restock Product
         </Button>
       </form>

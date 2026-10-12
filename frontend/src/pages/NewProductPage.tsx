@@ -263,7 +263,7 @@ export default function NewProductPage() {
           </FormSection>
         )}
 
-        <Button type="submit" className="page-action w-full" size="lg" loading={isSubmitting || mutation.isPending} disabled={saveSuccess}>
+        <Button type="submit" className="w-full" size="lg" loading={isSubmitting || mutation.isPending} disabled={saveSuccess}>
           {saveSuccess ? 'Saved!' : 'Save product'}
         </Button>
       </form>

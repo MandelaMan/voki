@@ -297,7 +297,7 @@ export default function NewSalePage() {
           </div>
 
           <Button
-            className="page-action w-full mt-4"
+            className="w-full mt-4"
             size="lg"
             onClick={() => mutation.mutate()}
             loading={mutation.isPending}
