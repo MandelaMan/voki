@@ -276,6 +276,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <ChevronDown size={14} className="text-slate-400 shrink-0" />
               </button>
               <StatusCluster isOnline={isOnline} pendingSync={pendingSync} />
+              <button
+                onClick={() => navigate('/search')}
+                className="p-2 rounded-xl text-slate-500 hover:bg-white dark:hover:bg-slate-800 lg:hidden"
+                aria-label="Search"
+              >
+                <Search size={18} />
+              </button>
+              <button
+                onClick={() => navigate('/notifications')}
+                className="p-2 rounded-xl text-slate-500 hover:bg-white dark:hover:bg-slate-800"
+                aria-label="Notifications"
+              >
+                <Bell size={18} />
+              </button>
               <ThemeToggle />
               <button
                 type="button"
@@ -286,20 +300,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 title="Log out"
               >
                 <LogOut size={18} />
-              </button>
-              <button
-                onClick={() => navigate('/notifications')}
-                className="p-2 rounded-xl text-slate-500 hover:bg-white dark:hover:bg-slate-800"
-                aria-label="Notifications"
-              >
-                <Bell size={18} />
-              </button>
-              <button
-                onClick={() => navigate('/search')}
-                className="p-2 rounded-xl text-slate-500 hover:bg-white dark:hover:bg-slate-800 lg:hidden"
-                aria-label="Search"
-              >
-                <Search size={18} />
               </button>
             </div>
           </div>
