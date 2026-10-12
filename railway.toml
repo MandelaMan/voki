@@ -1,9 +1,8 @@
 [build]
-builder = "NIXPACKS"
-buildCommand = "cd backend && npm install --include=dev && if [ -z \"$DATABASE_URL\" ]; then export DATABASE_URL=\"mysql://build:build@127.0.0.1:3306/voki\"; fi && npm run build && npm prune --omit=dev"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "npm run start --prefix backend"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
