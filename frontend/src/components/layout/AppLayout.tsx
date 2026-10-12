@@ -247,20 +247,94 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const viewport = window.visualViewport;
-    const sync = () => {
-      const height = viewport?.height ?? window.innerHeight;
-      const top = Math.max(0, viewport?.offsetTop ?? 0);
-      document.documentElement.style.setProperty('--app-height', `${height}px`);
-      document.documentElement.style.setProperty('--app-top', `${top}px`);
+
+    const apply = (height: number, top: number) => {
+      document.documentElement.style.setProperty('--app-height', `${Math.round(height)}px`);
+      document.documentElement.style.setProperty('--app-top', `${Math.round(top)}px`);
     };
+
+    const editing = () => {
+      const el = document.activeElement;
+      if (!(el instanceof HTMLElement)) return false;
+      if (el.isContentEditable) return true;
+      if (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
+      if (el.tagName !== 'INPUT') return false;
+      const type = (el as HTMLInputElement).type;
+      return !['button', 'checkbox', 'radio', 'file', 'submit', 'reset', 'range', 'color'].includes(type);
+    };
+
+    const scrollFieldIntoView = () => {
+      const el = document.activeElement;
+      const main = mainRef.current;
+      if (!(el instanceof HTMLElement) || !main?.contains(el)) return;
+      const current = window.visualViewport;
+      const visibleTop = current?.offsetTop ?? 0;
+      const visibleBottom = visibleTop + (current?.height ?? window.innerHeight);
+      const rect = el.getBoundingClientRect();
+      const margin = 16;
+      if (rect.bottom > visibleBottom - margin) {
+        main.scrollBy({ top: rect.bottom - (visibleBottom - margin) });
+      } else if (rect.top < visibleTop + margin) {
+        main.scrollBy({ top: rect.top - (visibleTop + margin) });
+      }
+    };
+
+    let fullHeight = window.innerHeight;
+    let fullTop = 0;
+
+    const sync = () => {
+      const current = window.visualViewport;
+      const inner = window.innerHeight;
+      const height = current?.height ?? inner;
+      const top = Math.max(0, current?.offsetTop ?? 0);
+      const keyboard = inner - height > 80 || (editing() && top > 0);
+      // A short visual viewport is the keyboard. Keep the last full-screen size so the gap cannot stick.
+      if (keyboard) {
+        apply(fullHeight, fullTop);
+        if (window.scrollY !== 0) window.scrollTo(0, 0);
+        scrollFieldIntoView();
+        return;
+      }
+      fullHeight = height;
+      fullTop = top;
+      apply(height, top);
+    };
+
+    const restoreAfterTyping = () => {
+      [80, 400].forEach((delay) => {
+        window.setTimeout(() => {
+          if (editing()) return;
+          const current = window.visualViewport;
+          const inner = window.innerHeight;
+          const height = current?.height ?? inner;
+          const top = Math.max(0, current?.offsetTop ?? 0);
+          if (inner - height > 80 || top > 24) {
+            fullHeight = inner;
+            fullTop = 0;
+            apply(inner, 0);
+            return;
+          }
+          fullHeight = height;
+          fullTop = top;
+          apply(height, top);
+        }, delay);
+      });
+    };
+
     sync();
     viewport?.addEventListener('resize', sync);
     viewport?.addEventListener('scroll', sync);
+    window.addEventListener('resize', sync);
     window.addEventListener('orientationchange', sync);
+    document.addEventListener('focusout', restoreAfterTyping);
+    document.addEventListener('focusin', scrollFieldIntoView);
     return () => {
       viewport?.removeEventListener('resize', sync);
       viewport?.removeEventListener('scroll', sync);
+      window.removeEventListener('resize', sync);
       window.removeEventListener('orientationchange', sync);
+      document.removeEventListener('focusout', restoreAfterTyping);
+      document.removeEventListener('focusin', scrollFieldIntoView);
     };
   }, []);
 
