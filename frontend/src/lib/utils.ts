@@ -70,10 +70,12 @@ export function formatRelative(date: string | Date) {
   return formatDate(date);
 }
 
+export const API_ORIGIN = import.meta.env.PROD ? 'https://voki.onrender.com' : '';
+
 export function getImageUrl(path?: string | null) {
   if (!path) return null;
   if (path.startsWith('http')) return path;
-  return path;
+  return `${API_ORIGIN}${path}`;
 }
 
 export function getStockStatusColor(status: string) {
