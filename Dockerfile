@@ -15,4 +15,4 @@ RUN npx prisma generate && npx tsc
 
 ENV NODE_ENV=production
 EXPOSE 3001
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node dist/index.js"]
