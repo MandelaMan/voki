@@ -1,4 +1,4 @@
-import { prisma } from '../utils/prisma';
+import { dbTransaction, prisma } from '../utils/prisma';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { activityRepository, getStockStatus } from '../repositories/activity.repository';
 
@@ -125,7 +125,7 @@ export const purchaseService = {
       }, tx);
 
       return purchase;
-    });
+    }, dbTransaction);
   },
 
   async updateReceipt(id: string, businessId: string, receiptPath?: string, invoicePath?: string) {

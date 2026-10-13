@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { prisma } from '../utils/prisma';
+import { dbTransaction, prisma } from '../utils/prisma';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateSku } from '../utils/sku';
 import { getStockStatus } from '../repositories/activity.repository';
@@ -411,15 +411,30 @@ export const productService = {
       throw new ValidationError('Add at least one item with quantity greater than 0');
     }
 
-    return prisma.$transaction(async (tx) => {
+    const existing = await prisma.product.findFirst({
+      where: { id: productId, businessId: data.businessId, deletedAt: null },
+      include: { variants: { where: { deletedAt: null } } },
+    });
+    if (!existing) throw new NotFoundError('Product not found');
+
+    const business = await prisma.business.findUnique({ where: { id: data.businessId } });
+    const threshold = business?.lowStockThreshold ?? 5;
+
+    let supplierId = existing.supplierId || undefined;
+    if (data.supplierId) {
+      const supplier = await prisma.supplier.findFirst({
+        where: { id: data.supplierId, businessId: data.businessId, deletedAt: null },
+      });
+      if (!supplier) throw new ValidationError('Choose a supplier from this business, or add a new one');
+      supplierId = supplier.id;
+    }
+
+    const purchaseId = await prisma.$transaction(async (tx) => {
       const product = await tx.product.findFirst({
         where: { id: productId, businessId: data.businessId, deletedAt: null },
         include: { variants: { where: { deletedAt: null } } },
       });
       if (!product) throw new NotFoundError('Product not found');
-
-      const business = await tx.business.findUnique({ where: { id: data.businessId } });
-      const threshold = business?.lowStockThreshold ?? 5;
 
       const purchaseItems: Array<{
         name: string;
@@ -501,23 +516,15 @@ export const productService = {
         });
       }
 
-      let supplierId = product.supplierId || undefined;
-      if (data.supplierId) {
-        const supplier = await tx.supplier.findFirst({
-          where: { id: data.supplierId, businessId: data.businessId, deletedAt: null },
+      if (supplierId && supplierId !== product.supplierId) {
+        await tx.product.update({
+          where: { id: product.id },
+          data: { supplierId },
         });
-        if (!supplier) throw new ValidationError('Choose a supplier from this business, or add a new one');
-        supplierId = supplier.id;
-        if (supplier.id !== product.supplierId) {
-          await tx.product.update({
-            where: { id: product.id },
-            data: { supplierId: supplier.id },
-          });
-        }
       }
 
       const totalCost = purchaseItems.reduce((sum, item) => sum + item.quantity * item.unitCost, 0);
-      const purchase = await tx.purchase.create({
+      const created = await tx.purchase.create({
         data: {
           businessId: data.businessId,
           supplierId,
@@ -535,7 +542,6 @@ export const productService = {
             })),
           },
         },
-        include: { items: true, supplier: true },
       });
 
       await activityRepository.log({
@@ -544,10 +550,14 @@ export const productService = {
         action: 'RESTOCK',
         entityType: 'Product',
         entityId: product.id,
-        metadata: { purchaseId: purchase.id, totalCost, items: activeItems },
+        metadata: { purchaseId: created.id, totalCost, items: activeItems },
       }, tx);
 
-      const updatedProduct = await tx.product.findFirst({
+      return created.id;
+    }, dbTransaction);
+
+    const [updatedProduct, purchase] = await Promise.all([
+      prisma.product.findFirst({
         where: { id: productId, businessId: data.businessId, deletedAt: null },
         include: {
           category: true,
@@ -556,9 +566,13 @@ export const productService = {
           images: { orderBy: { order: 'asc' } },
           variants: { where: { deletedAt: null } },
         },
-      });
+      }),
+      prisma.purchase.findUnique({
+        where: { id: purchaseId },
+        include: { items: true, supplier: true },
+      }),
+    ]);
 
-      return { product: updatedProduct, purchase };
-    });
+    return { product: updatedProduct, purchase };
   },
 };

@@ -1,4 +1,4 @@
-import { prisma } from '../utils/prisma';
+import { dbTransaction, prisma } from '../utils/prisma';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { getStockStatus } from '../repositories/activity.repository';
 import { activityRepository } from '../repositories/activity.repository';
@@ -217,7 +217,7 @@ export const saleService = {
       }, tx);
 
       return sale;
-    });
+    }, dbTransaction);
   },
 
   async syncOffline(userId: string, sales: Parameters<typeof this.create>[1][]) {

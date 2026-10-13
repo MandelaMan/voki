@@ -11,3 +11,8 @@ export const prisma =
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
+
+export const dbTransaction = {
+  maxWait: 10_000,
+  timeout: 20_000,
+};
