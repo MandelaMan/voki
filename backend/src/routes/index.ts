@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/auth';
+import { authenticate, requireSuperAdmin } from '../middleware/auth';
 import { validate } from '../middleware/validate';
-import { uploadImage, uploadReceipt } from '../middleware/upload';
+import { uploadImage, uploadReceipt, uploadSingleImage } from '../middleware/upload';
+import { requirePremium } from '../middleware/premium';
 import {
   authController,
   businessController,
@@ -15,6 +16,14 @@ import {
   notificationController,
 } from '../controllers';
 import {
+  billingController,
+  customerController,
+  imageController,
+  mpesaController,
+  removeBackgroundLimiter,
+} from '../controllers/premium.controller';
+import { adminController } from '../controllers/admin.controller';
+import {
   registerSchema,
   loginSchema,
   forgotPasswordSchema,
@@ -27,7 +36,8 @@ import { createCategorySchema } from '../validators/category.validator';
 import { createSupplierSchema } from '../validators/supplier.validator';
 import { createProductSchema, productQuerySchema, restockProductSchema } from '../validators/product.validator';
 import { createPurchaseSchema, purchaseQuerySchema } from '../validators/purchase.validator';
-import { createSaleSchema, saleQuerySchema, syncSalesSchema } from '../validators/sale.validator';
+import { createSaleSchema, markSalePaidSchema, salePromptSchema, saleQuerySchema, syncSalesSchema } from '../validators/sale.validator';
+import { adminPlanSchema, adminPriceSchema, adminStatusSchema, simulatePromptSchema, subscribeSchema } from '../validators/billing.validator';
 
 const router = Router();
 
@@ -75,11 +85,44 @@ router.get('/purchases', authenticate, validate(purchaseQuerySchema, 'query'), p
 router.get('/purchases/:id', authenticate, purchaseController.get);
 router.post('/purchases', authenticate, validate(createPurchaseSchema), purchaseController.create);
 
+// Billing and Premium
+router.get('/billing', authenticate, billingController.summary);
+router.post('/billing/subscribe', authenticate, validate(subscribeSchema), billingController.subscribe);
+router.get('/billing/payments/:id', authenticate, billingController.payment);
+router.post('/mpesa/callback', mpesaController.callback);
+router.get('/mpesa/prompts/:id', authenticate, mpesaController.getPrompt);
+router.post('/mpesa/prompts/:id/simulate', authenticate, validate(simulatePromptSchema), mpesaController.simulate);
+router.post(
+  '/images/remove-background',
+  authenticate,
+  requirePremium,
+  removeBackgroundLimiter,
+  uploadSingleImage.single('image'),
+  imageController.removeBackground
+);
+router.get('/customers', authenticate, requirePremium, customerController.list);
+
+router.get('/admin', authenticate, requireSuperAdmin, adminController.overview);
+router.get('/admin/analytics', authenticate, requireSuperAdmin, adminController.analytics);
+router.get('/admin/businesses', authenticate, requireSuperAdmin, adminController.businesses);
+router.get('/admin/inventory', authenticate, requireSuperAdmin, adminController.inventory);
+router.get('/admin/sales', authenticate, requireSuperAdmin, adminController.sales);
+router.get('/admin/purchases', authenticate, requireSuperAdmin, adminController.purchases);
+router.get('/admin/records/:kind', authenticate, requireSuperAdmin, adminController.records);
+router.get('/admin/issues', authenticate, requireSuperAdmin, adminController.issues);
+router.get('/admin/users/:id', authenticate, requireSuperAdmin, adminController.subscriber);
+router.put('/admin/pricing', authenticate, requireSuperAdmin, validate(adminPriceSchema), adminController.setPrice);
+router.put('/admin/users/:id/plan', authenticate, requireSuperAdmin, validate(adminPlanSchema), adminController.setPlan);
+router.put('/admin/users/:id/status', authenticate, requireSuperAdmin, validate(adminStatusSchema), adminController.setStatus);
+
 // Sales
 router.get('/sales', authenticate, validate(saleQuerySchema, 'query'), saleController.list);
+router.post('/sales/sync', authenticate, validate(syncSalesSchema), saleController.sync);
+router.get('/sales/:id/receipt', authenticate, requirePremium, saleController.receipt);
+router.post('/sales/:id/mpesa-prompt', authenticate, requirePremium, validate(salePromptSchema), saleController.prompt);
+router.post('/sales/:id/payment', authenticate, requirePremium, validate(markSalePaidSchema), saleController.markPaid);
 router.get('/sales/:id', authenticate, saleController.get);
 router.post('/sales', authenticate, validate(createSaleSchema), saleController.create);
-router.post('/sales/sync', authenticate, validate(syncSalesSchema), saleController.sync);
 
 // Dashboard
 router.get('/dashboard', authenticate, dashboardController.getStats);
@@ -91,6 +134,8 @@ router.get('/reports/profit', authenticate, reportController.profit);
 router.get('/reports/low-stock', authenticate, reportController.lowStock);
 router.get('/reports/dead-stock', authenticate, reportController.deadStock);
 router.get('/reports/purchases', authenticate, reportController.purchases);
+router.get('/reports/cash-up', authenticate, requirePremium, reportController.cashUp);
+router.get('/reports/restock', authenticate, requirePremium, reportController.restock);
 
 // Notifications
 router.get('/notifications', authenticate, notificationController.list);

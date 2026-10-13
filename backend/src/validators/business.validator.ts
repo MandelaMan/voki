@@ -7,4 +7,12 @@ export const createBusinessSchema = z.object({
   lowStockThreshold: z.number().int().min(0).default(5),
 });
 
-export const updateBusinessSchema = createBusinessSchema.partial();
+export const updateBusinessSchema = createBusinessSchema.partial().extend({
+  mpesaType: z.enum(['PAYBILL', 'TILL']).optional(),
+  mpesaShortCode: z.string().trim().max(20).optional(),
+  mpesaAccount: z.string().trim().max(20).optional(),
+  mpesaConsumerKey: z.string().trim().max(200).optional(),
+  mpesaConsumerSecret: z.string().trim().max(200).optional(),
+  mpesaPasskey: z.string().trim().max(200).optional(),
+  clearMpesaCredentials: z.boolean().optional(),
+});

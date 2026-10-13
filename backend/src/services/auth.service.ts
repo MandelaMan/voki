@@ -7,8 +7,10 @@ import {
   getRefreshTokenExpiry,
   verifyAccessToken,
 } from '../utils/tokens';
-import { ConflictError, NotFoundError, UnauthorizedError } from '../utils/errors';
+import { ConflictError, UnauthorizedError } from '../utils/errors';
 import { activityRepository } from '../repositories/activity.repository';
+import { PlanTier } from '@prisma/client';
+import { planService, presentPlan } from './plan.service';
 
 const sanitizeUser = (user: {
   id: string;
@@ -19,6 +21,9 @@ const sanitizeUser = (user: {
   avatar: string | null;
   theme: string;
   createdAt: Date;
+  plan: PlanTier;
+  planExpiresAt: Date | null;
+  role: 'USER' | 'SUPER_ADMIN';
 }) => ({
   id: user.id,
   email: user.email,
@@ -27,7 +32,9 @@ const sanitizeUser = (user: {
   phone: user.phone,
   avatar: user.avatar,
   theme: user.theme,
+  role: user.role,
   createdAt: user.createdAt,
+  ...presentPlan(user),
 });
 
 export const authService = {
@@ -80,7 +87,8 @@ export const authService = {
       entityId: user.id,
     });
 
-    return { user: sanitizeUser(user), ...tokens };
+    const billing = await planService.loadBilling(user.id);
+    return { user: sanitizeUser(billing.user), ...tokens };
   },
 
   async createTokens(userId: string, email: string) {
@@ -104,7 +112,7 @@ export const authService = {
       include: { user: true },
     });
 
-    if (!stored || stored.expiresAt < new Date()) {
+    if (!stored || stored.expiresAt < new Date() || stored.user.deletedAt) {
       if (stored) await prisma.refreshToken.delete({ where: { id: stored.id } });
       throw new UnauthorizedError('Invalid refresh token');
     }
@@ -152,9 +160,8 @@ export const authService = {
   },
 
   async getProfile(userId: string) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundError('User not found');
-    return sanitizeUser(user);
+    const billing = await planService.loadBilling(userId);
+    return sanitizeUser(billing.user);
   },
 
   async updateProfile(userId: string, data: Partial<{

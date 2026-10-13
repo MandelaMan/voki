@@ -15,6 +15,10 @@ interface AuthState {
   updateUser: (user: User) => void;
 }
 
+export function usePremium() {
+  return useAuthStore((state) => Boolean(state.user?.isPremium));
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({

@@ -1,7 +1,57 @@
+import { Prisma } from '@prisma/client';
 import { dbTransaction, prisma } from '../utils/prisma';
-import { NotFoundError, ValidationError } from '../utils/errors';
+import { NotFoundError, PremiumRequiredError, ValidationError } from '../utils/errors';
 import { getStockStatus } from '../repositories/activity.repository';
 import { activityRepository } from '../repositories/activity.repository';
+import { planService } from './plan.service';
+import { mpesaService } from './mpesa.service';
+import { normalizeKenyanPhone } from '../utils/phone';
+
+async function upsertCustomer(
+  tx: Prisma.TransactionClient,
+  businessId: string,
+  name?: string,
+  phone?: string
+) {
+  if (phone) {
+    const existing = await tx.customer.findFirst({ where: { businessId, phone, deletedAt: null } });
+    if (existing) {
+      if (name && existing.name !== name) {
+        await tx.customer.update({ where: { id: existing.id }, data: { name } });
+      }
+      return existing.id;
+    }
+  }
+
+  const created = await tx.customer.create({
+    data: {
+      businessId,
+      name: name || phone || 'Customer',
+      phone,
+    },
+  });
+  return created.id;
+}
+
+async function assignReceiptNumber(saleId: string, businessId: string) {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const count = await prisma.sale.count({
+      where: { businessId, receiptNumber: { not: null } },
+    });
+    const receiptNumber = `R${String(count + 1 + attempt).padStart(4, '0')}`;
+    try {
+      await prisma.sale.update({ where: { id: saleId }, data: { receiptNumber } });
+      return receiptNumber;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') continue;
+      throw error;
+    }
+  }
+
+  const receiptNumber = `R${Date.now().toString().slice(-8)}`;
+  await prisma.sale.update({ where: { id: saleId }, data: { receiptNumber } });
+  return receiptNumber;
+}
 
 export const saleService = {
   async list(query: {
@@ -62,6 +112,7 @@ export const saleService = {
       where: { id, businessId, deletedAt: null },
       include: {
         customer: true,
+        mpesaPrompts: { orderBy: { createdAt: 'desc' }, take: 1 },
         items: {
           include: {
             product: { include: { images: { orderBy: [{ isPrimary: 'desc' }, { order: 'asc' }] } } },
@@ -77,6 +128,9 @@ export const saleService = {
   async create(userId: string, data: {
     businessId: string;
     customerId?: string;
+    customerName?: string;
+    customerPhone?: string;
+    promptMpesa?: boolean;
     saleDate?: string;
     paymentMethod: string;
     notes?: string;
@@ -90,13 +144,29 @@ export const saleService = {
   }) {
     const business = await prisma.business.findUnique({ where: { id: data.businessId } });
     const threshold = business?.lowStockThreshold ?? 5;
+    const premium = (await planService.loadBilling(userId)).isPremium;
+    const wantsPrompt = Boolean(data.promptMpesa) && !data.offlineId;
+    if (wantsPrompt && !premium) {
+      throw new PremiumRequiredError('M-Pesa prompts are included with Premium.');
+    }
+    if (wantsPrompt && data.paymentMethod !== 'MPESA') {
+      throw new ValidationError('Choose M-Pesa as the payment method to prompt the customer.');
+    }
+
+    const customerName = premium ? data.customerName?.trim() : undefined;
+    const customerPhone = premium && data.customerPhone?.trim()
+      ? normalizeKenyanPhone(data.customerPhone)
+      : undefined;
+    if (wantsPrompt && !customerPhone) {
+      throw new ValidationError('Enter the customer phone number to send the M-Pesa prompt.');
+    }
 
     if (data.offlineId) {
       const existing = await prisma.sale.findUnique({ where: { offlineId: data.offlineId } });
       if (existing) return existing;
     }
 
-    return prisma.$transaction(async (tx) => {
+    const sale = await prisma.$transaction(async (tx) => {
       let totalAmount = 0;
       let totalProfit = 0;
       const saleItems: Array<{
@@ -190,12 +260,18 @@ export const saleService = {
         totalProfit += saleItems[saleItems.length - 1].profit;
       }
 
+      let customerId = data.customerId;
+      if (!customerId && (customerName || customerPhone)) {
+        customerId = await upsertCustomer(tx, data.businessId, customerName, customerPhone);
+      }
+
       const sale = await tx.sale.create({
         data: {
           businessId: data.businessId,
-          customerId: data.customerId,
+          customerId,
           saleDate: data.saleDate ? new Date(data.saleDate) : new Date(),
           paymentMethod: data.paymentMethod as 'CASH' | 'CARD' | 'MPESA' | 'BANK_TRANSFER' | 'OTHER',
+          paymentStatus: wantsPrompt ? 'PENDING' : 'PAID',
           notes: data.notes,
           totalAmount,
           totalProfit,
@@ -218,6 +294,79 @@ export const saleService = {
 
       return sale;
     }, dbTransaction);
+
+    if (!wantsPrompt || !customerPhone) return sale;
+
+    try {
+      const mpesaPrompt = await mpesaService.requestSalePayment(userId, sale.id, customerPhone);
+      return { ...sale, mpesaPrompt, promptError: null as string | null };
+    } catch (error) {
+      return {
+        ...sale,
+        mpesaPrompt: null,
+        promptError: error instanceof Error ? error.message : 'Could not send the M-Pesa prompt.',
+      };
+    }
+  },
+
+  async receipt(userId: string, saleId: string, businessId: string) {
+    await planService.assertPremium(userId);
+    const business = await prisma.business.findFirst({
+      where: { id: businessId, userId, deletedAt: null },
+    });
+    if (!business) throw new NotFoundError('Business not found');
+
+    const sale = await this.get(saleId, businessId);
+    const receiptNumber = sale.receiptNumber || await assignReceiptNumber(sale.id, businessId);
+
+    return {
+      receiptNumber,
+      saleDate: sale.saleDate,
+      paymentMethod: sale.paymentMethod,
+      paymentStatus: sale.paymentStatus,
+      mpesaReceipt: sale.mpesaReceipt,
+      business: {
+        name: business.name,
+        logo: business.logo,
+        currency: business.currency,
+        mpesaType: business.mpesaType,
+        mpesaShortCode: business.mpesaShortCode,
+        mpesaAccount: business.mpesaAccount,
+      },
+      customer: sale.customer
+        ? { name: sale.customer.name, phone: sale.customer.phone }
+        : null,
+      items: sale.items.map((item) => ({
+        name: item.product?.name || 'Item',
+        variant: item.variant ? `${item.variant.variantType}: ${item.variant.variantValue}` : null,
+        quantity: item.quantity,
+        unitPrice: Number(item.sellingPrice),
+        lineTotal: Number(item.sellingPrice) * item.quantity,
+      })),
+      total: Number(sale.totalAmount),
+    };
+  },
+
+  async markPaid(userId: string, saleId: string, businessId: string, mpesaReceipt?: string) {
+    await planService.assertPremium(userId);
+    const business = await prisma.business.findFirst({
+      where: { id: businessId, userId, deletedAt: null },
+    });
+    if (!business) throw new NotFoundError('Business not found');
+    const sale = await prisma.sale.findFirst({ where: { id: saleId, businessId, deletedAt: null } });
+    if (!sale) throw new NotFoundError('Sale not found');
+
+    return prisma.sale.update({
+      where: { id: saleId },
+      data: {
+        paymentStatus: 'PAID',
+        ...(mpesaReceipt ? { mpesaReceipt } : {}),
+      },
+      include: {
+        customer: true,
+        items: { include: { product: true, variant: true } },
+      },
+    });
   },
 
   async syncOffline(userId: string, sales: Parameters<typeof this.create>[1][]) {

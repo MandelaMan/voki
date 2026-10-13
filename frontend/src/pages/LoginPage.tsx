@@ -40,7 +40,11 @@ export default function LoginPage() {
       await login(data.email, data.password);
       const businesses = await businessApi.list();
       setBusinesses(businesses);
-      if (businesses.length > 0) {
+      const signedIn = useAuthStore.getState().user;
+      if (signedIn?.role === 'SUPER_ADMIN' && businesses.length === 0) {
+        setActiveBusiness(null);
+        navigate('/admin');
+      } else if (businesses.length > 0) {
         setActiveBusiness(businesses[0]);
         navigate('/');
       } else {

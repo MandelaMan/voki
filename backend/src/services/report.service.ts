@@ -1,4 +1,6 @@
 import { prisma } from '../utils/prisma';
+import { NotFoundError } from '../utils/errors';
+import { planService } from './plan.service';
 
 export const reportService = {
   async inventoryReport(businessId: string) {
@@ -123,5 +125,90 @@ export const reportService = {
       include: { supplier: true, items: true },
       orderBy: { purchaseDate: 'desc' },
     });
+  },
+
+  async cashUp(userId: string, businessId: string, date?: string) {
+    await planService.assertPremium(userId);
+    const business = await prisma.business.findFirst({
+      where: { id: businessId, userId, deletedAt: null },
+    });
+    if (!business) throw new NotFoundError('Business not found');
+
+    const day = date ? new Date(`${date.slice(0, 10)}T12:00:00`) : new Date();
+    const start = new Date(day);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(day);
+    end.setHours(23, 59, 59, 999);
+
+    const sales = await prisma.sale.findMany({
+      where: { businessId, deletedAt: null, saleDate: { gte: start, lte: end } },
+      select: { paymentMethod: true, paymentStatus: true, totalAmount: true, totalProfit: true },
+    });
+
+    const sum = (rows: typeof sales) => rows.reduce((total, row) => total + Number(row.totalAmount), 0);
+    const methods = ['CASH', 'MPESA', 'CARD', 'BANK_TRANSFER', 'OTHER'] as const;
+    const byMethod = methods
+      .map((method) => {
+        const rows = sales.filter((sale) => sale.paymentMethod === method);
+        return {
+          method,
+          count: rows.length,
+          paid: sum(rows.filter((sale) => sale.paymentStatus === 'PAID')),
+          pending: sum(rows.filter((sale) => sale.paymentStatus === 'PENDING')),
+        };
+      })
+      .filter((row) => row.count > 0);
+
+    const paidRows = sales.filter((sale) => sale.paymentStatus === 'PAID');
+    return {
+      date: start.toISOString().slice(0, 10),
+      salesCount: sales.length,
+      paidTotal: sum(paidRows),
+      pendingTotal: sum(sales.filter((sale) => sale.paymentStatus === 'PENDING')),
+      profit: paidRows.reduce((total, row) => total + Number(row.totalProfit), 0),
+      byMethod,
+    };
+  },
+
+  async restockSuggestions(userId: string, businessId: string) {
+    await planService.assertPremium(userId);
+    const business = await prisma.business.findFirst({
+      where: { id: businessId, userId, deletedAt: null },
+    });
+    if (!business) throw new NotFoundError('Business not found');
+
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    const items = await prisma.saleItem.findMany({
+      where: { sale: { businessId, deletedAt: null, saleDate: { gte: since } } },
+      select: { productId: true, quantity: true },
+    });
+    const sold = new Map<string, number>();
+    for (const item of items) {
+      sold.set(item.productId, (sold.get(item.productId) || 0) + item.quantity);
+    }
+    if (sold.size === 0) return [];
+
+    const products = await prisma.product.findMany({
+      where: { businessId, deletedAt: null, id: { in: [...sold.keys()] } },
+      select: { id: true, name: true, sku: true, remainingQuantity: true, status: true },
+    });
+
+    return products
+      .map((product) => {
+        const soldLast30 = sold.get(product.id) || 0;
+        const dailyRate = soldLast30 / 30;
+        const daysOfCover = dailyRate > 0 ? product.remainingQuantity / dailyRate : null;
+        const suggestedOrder = Math.max(0, Math.ceil(dailyRate * 30) - product.remainingQuantity);
+        return {
+          ...product,
+          soldLast30,
+          dailyRate: Math.round(dailyRate * 10) / 10,
+          daysOfCover: daysOfCover === null ? null : Math.round(daysOfCover),
+          suggestedOrder,
+        };
+      })
+      .filter((product) => product.daysOfCover !== null && product.daysOfCover < 14)
+      .sort((a, b) => (a.daysOfCover ?? 0) - (b.daysOfCover ?? 0));
   },
 };

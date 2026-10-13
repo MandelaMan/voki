@@ -145,3 +145,9 @@ export const uploadReceipt = multer({
   fileFilter: documentFilter,
   limits: { fileSize: 20 * 1024 * 1024 },
 });
+
+export const uploadSingleImage = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: imageFilter,
+  limits: { fileSize: 10 * 1024 * 1024 },
+});

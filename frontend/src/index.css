@@ -229,6 +229,152 @@ body {
   width: 100%;
 }
 
+.admin-sheet {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  --admin-head-offset: var(--admin-toolbar, 0px);
+}
+
+.admin-sheet table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: auto;
+}
+
+.admin-pin {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  background: #eef3f9;
+}
+
+.admin-table-scroll {
+  overflow: visible;
+}
+
+.admin-sheet th,
+.admin-sheet td {
+  border: 0 !important;
+  box-shadow: none;
+  overflow-wrap: anywhere;
+}
+
+.admin-sheet th {
+  white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+  .admin-sheet thead {
+    display: none;
+  }
+
+  .admin-sheet table,
+  .admin-sheet tbody,
+  .admin-sheet tr {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-sheet tr {
+    margin-bottom: 0.75rem;
+  }
+
+  .admin-sheet td {
+    display: grid;
+    grid-template-columns: 6.75rem minmax(0, 1fr);
+    gap: 0.75rem;
+    width: 100%;
+    align-items: start;
+    white-space: normal;
+    text-align: start !important;
+  }
+
+  .admin-sheet td::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+  }
+}
+
+.admin-sheet.is-stacked thead {
+  display: none;
+}
+
+.admin-sheet.is-stacked table,
+.admin-sheet.is-stacked tbody,
+.admin-sheet.is-stacked tr {
+  display: block;
+  width: 100%;
+}
+
+.admin-sheet.is-stacked tr {
+  margin-bottom: 0.75rem;
+}
+
+.admin-sheet.is-stacked td {
+  display: grid;
+  grid-template-columns: 6.75rem minmax(0, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+  align-items: start;
+  white-space: normal;
+  text-align: start !important;
+}
+
+.admin-sheet.is-stacked td::before {
+  content: attr(data-label);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.admin-sheet td button {
+  white-space: normal;
+  max-width: 100%;
+  height: auto;
+}
+
+.admin-sheet th {
+  background: #e4f1fa;
+  color: #475569;
+}
+
+.admin-sheet tbody td {
+  background: #fff;
+}
+
+.admin-sheet tbody tr:nth-child(even) td {
+  background: #f4f8fb;
+}
+
+.admin-sheet tbody tr:hover td {
+  background: #eaf3f9;
+}
+
+.dark .admin-pin {
+  background: #020617;
+}
+
+.dark .admin-sheet th {
+  background: #1a3144;
+  color: #cbd5e1;
+}
+
+.dark .admin-sheet tbody td {
+  background: #020617;
+}
+
+.dark .admin-sheet tbody tr:nth-child(even) td {
+  background: #0b1220;
+}
+
+.dark .admin-sheet tbody tr:hover td {
+  background: #152033;
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -299,4 +445,23 @@ textarea:-webkit-autofill {
 .dark textarea:-webkit-autofill {
   -webkit-text-fill-color: #f1f5f9 !important;
   caret-color: #f1f5f9 !important;
+}
+
+@media print {
+  .app-shell {
+    display: block !important;
+    min-height: 0 !important;
+    background: white !important;
+  }
+
+  .app-shell header,
+  .app-shell aside,
+  .app-tabbar {
+    display: none !important;
+  }
+
+  main {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
 }

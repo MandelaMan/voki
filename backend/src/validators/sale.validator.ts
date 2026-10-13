@@ -10,6 +10,9 @@ const saleItemSchema = z.object({
 export const createSaleSchema = z.object({
   businessId: z.string().uuid(),
   customerId: z.string().uuid().optional(),
+  customerName: z.string().trim().max(80).optional(),
+  customerPhone: z.string().trim().max(20).optional(),
+  promptMpesa: z.boolean().optional(),
   saleDate: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}/)).optional(),
   paymentMethod: z.enum(['CASH', 'CARD', 'MPESA', 'BANK_TRANSFER', 'OTHER']).default('CASH'),
   notes: z.string().optional(),
@@ -30,4 +33,13 @@ export const saleQuerySchema = z.object({
 
 export const syncSalesSchema = z.object({
   sales: z.array(createSaleSchema),
+});
+
+export const salePromptSchema = z.object({
+  phone: z.string().trim().min(9).max(20),
+});
+
+export const markSalePaidSchema = z.object({
+  businessId: z.string().uuid(),
+  mpesaReceipt: z.string().trim().max(20).optional(),
 });

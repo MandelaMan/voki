@@ -16,6 +16,9 @@ import {
   Users,
   Settings,
   LogOut,
+  Sparkles,
+  AlertTriangle,
+  Store,
 } from 'lucide-react';
 import { VokiMark } from '../brand/VokiMark';
 import { PageTransition } from './PageTransition';
@@ -35,11 +38,32 @@ const bottomNav = [
   { to: '/more', icon: User, label: 'More' },
 ];
 
+const adminBottomNav = [
+  { to: '/admin', icon: LayoutDashboard, label: 'Home' },
+  { to: '/admin/subscribers', icon: Users, label: 'People' },
+  { to: '/admin/stock', icon: Package, label: 'Stock' },
+  { to: '/admin/issues', icon: AlertTriangle, label: 'Issues' },
+  { to: '/more', icon: User, label: 'More' },
+];
+
+const adminSideItems = [
+  { to: '/admin', icon: LayoutDashboard, label: 'Overview' },
+  { to: '/admin/subscribers', icon: Users, label: 'Subscribers' },
+  { to: '/admin/shops', icon: Store, label: 'Shops' },
+  { to: '/admin/stock', icon: Package, label: 'Stock' },
+  { to: '/admin/sales', icon: ShoppingCart, label: 'Sales' },
+  { to: '/admin/purchases', icon: Truck, label: 'Purchases' },
+  { to: '/admin/issues', icon: AlertTriangle, label: 'Issues' },
+  { to: '/admin/pricing', icon: Sparkles, label: 'Pricing' },
+  { to: '/more', icon: Settings, label: 'Settings' },
+];
+
 const sideItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/inventory', icon: Package, label: 'Items' },
   { to: '/sales', icon: ShoppingCart, label: 'Sales' },
   { to: '/purchases', icon: Truck, label: 'Purchases' },
+  { to: '/plan', icon: Sparkles, label: 'Premium' },
   { to: '/reports', icon: BarChart3, label: 'Reports' },
   { to: '/categories', icon: Tag, label: 'Categories' },
   { to: '/suppliers', icon: Users, label: 'Suppliers' },
@@ -47,8 +71,12 @@ const sideItems = [
   { to: '/more', icon: Settings, label: 'Settings' },
 ];
 
-function isBottomActive(pathname: string, to: string) {
+function isBottomActive(pathname: string, to: string, isSuperAdmin: boolean) {
   if (to === '/') return pathname === '/';
+  if (to === '/admin') return pathname === '/admin';
+  if (to === '/admin/subscribers') return pathname.startsWith('/admin/subscribers');
+  if (to === '/admin/stock') return pathname.startsWith('/admin/stock');
+  if (to === '/admin/issues') return pathname.startsWith('/admin/issues');
   if (to === '/sales/new') return pathname.startsWith('/sales');
   if (to === '/inventory') return pathname.startsWith('/inventory');
   if (to === '/purchases') return pathname.startsWith('/purchases');
@@ -61,6 +89,9 @@ function isBottomActive(pathname: string, to: string) {
       || pathname.startsWith('/suppliers')
       || pathname.startsWith('/notifications')
       || pathname.startsWith('/reports')
+      || pathname.startsWith('/plan')
+      || (!isSuperAdmin && pathname.startsWith('/admin'))
+      || pathname.startsWith('/customers')
       || pathname.startsWith('/privacy')
       || pathname.startsWith('/terms')
     );
@@ -69,7 +100,7 @@ function isBottomActive(pathname: string, to: string) {
 }
 
 function isSideActive(pathname: string, to: string) {
-  if (to === '/') return pathname === '/';
+  if (to === '/' || to === '/admin') return pathname === to;
   return pathname === to || pathname.startsWith(`${to}/`);
 }
 
@@ -84,6 +115,18 @@ function sectionLabel(pathname: string) {
   if (pathname.startsWith('/purchases/new')) return 'Record Purchase';
   if (pathname.startsWith('/purchases')) return 'Purchases';
   if (pathname.startsWith('/reports')) return 'Reports';
+  if (pathname.startsWith('/plan')) return 'Premium';
+  if (pathname === '/admin') return 'Overview';
+  if (pathname.startsWith('/admin/subscribers')) return 'Subscriber';
+  if (pathname.startsWith('/admin/shops')) return 'Shops';
+  if (pathname.startsWith('/admin/stock')) return 'Stock';
+  if (pathname.startsWith('/admin/sales')) return 'Sales';
+  if (pathname.startsWith('/admin/purchases')) return 'Purchases';
+  if (pathname.startsWith('/admin/issues')) return 'Issues';
+  if (pathname.startsWith('/admin/pricing')) return 'Pricing';
+  if (pathname.startsWith('/admin')) return 'Admin';
+  if (pathname.startsWith('/customers')) return 'Customers';
+  if (pathname.includes('/receipt')) return 'Receipt';
   if (pathname.startsWith('/search')) return 'Search';
   if (pathname.startsWith('/categories')) return 'Categories';
   if (pathname.startsWith('/suppliers')) return 'Suppliers';
@@ -98,6 +141,9 @@ function sectionLabel(pathname: string) {
 
 export function BottomNav() {
   const { pathname } = useLocation();
+  const user = useAuthStore((state) => state.user);
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const items = isSuperAdmin ? adminBottomNav : bottomNav;
   const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -154,16 +200,16 @@ export function BottomNav() {
   const nav = (
     <nav
       ref={navRef}
-      className="app-tabbar shrink-0 z-40 border-t border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 lg:hidden"
+      className="app-tabbar shrink-0 z-40 border-t border-slate-200/80 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 lg:hidden print:hidden"
     >
       <div className="grid grid-cols-5 px-1">
-        {bottomNav.map(({ to, icon: Icon, label }) => {
-          const active = isBottomActive(pathname, to);
+        {items.map(({ to, icon: Icon, label }) => {
+          const active = isBottomActive(pathname, to, isSuperAdmin);
           return (
             <NavLink
               key={to}
               to={to}
-              end={to === '/'}
+              end={to === '/' || to === '/admin'}
               className="flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl py-1.5"
             >
               <span
@@ -201,14 +247,14 @@ function Sidebar() {
   const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Account';
 
   return (
-    <aside className="hidden lg:flex w-[232px] shrink-0 sticky top-0 h-dvh flex-col border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-4">
+    <aside className="hidden lg:flex w-[232px] shrink-0 sticky top-0 h-dvh flex-col border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-4 print:hidden">
       <div className="flex items-center gap-2.5 px-1 mb-4">
         <VokiMark size={36} />
         <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">Voki</span>
       </div>
 
       <NavLink
-        to="/search"
+        to={user?.role === 'SUPER_ADMIN' ? '/admin/subscribers' : '/search'}
         className="flex items-center gap-2 h-10 px-3 mb-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-sm text-slate-400"
       >
         <Search size={16} />
@@ -217,13 +263,13 @@ function Sidebar() {
 
       <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0">
         <div className="grid grid-cols-2 gap-2">
-          {sideItems.map(({ to, icon: Icon, label }) => {
+          {(user?.role === 'SUPER_ADMIN' ? adminSideItems : sideItems).map(({ to, icon: Icon, label }) => {
             const active = isSideActive(pathname, to);
             return (
               <NavLink
                 key={to}
                 to={to}
-                end={to === '/'}
+                end={to === '/' || to === '/admin'}
                 className={cn(
                   'flex flex-col items-center gap-1.5 rounded-2xl border px-1.5 py-3 text-center transition-colors',
                   active
@@ -295,6 +341,8 @@ function StatusCluster({ isOnline, pendingSync }: { isOnline: boolean; pendingSy
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { activeBusiness } = useBusinessStore();
+  const user = useAuthStore((state) => state.user);
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const isOnline = useOnlineStatus();
   const pendingSync = offlineQueue.count();
   const navigate = useNavigate();
@@ -401,21 +449,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   return (
-    <div className="app-shell min-h-svh bg-[#eef3f9] dark:bg-slate-950 lg:flex">
+    <div className="app-shell min-h-svh bg-[#eef3f9] dark:bg-slate-950 lg:flex lg:h-dvh lg:overflow-hidden">
       <Sidebar />
 
-      <div className="flex w-full min-w-0 flex-1 flex-col max-lg:min-h-0">
-        <header className="safe-top z-30 shrink-0 bg-[#eef3f9]/95 backdrop-blur dark:bg-slate-950/95 lg:sticky lg:top-0">
+      <div className="flex w-full min-w-0 flex-1 flex-col max-lg:min-h-0 lg:h-dvh lg:overflow-hidden">
+        <header className="safe-top relative z-30 shrink-0 bg-[#eef3f9] dark:bg-slate-950 print:hidden">
           <div className="flex items-center gap-2 px-3 sm:px-4 lg:px-6 h-14">
             <button
-              onClick={() => navigate('/businesses')}
+              onClick={() => navigate(isSuperAdmin ? '/admin/subscribers' : '/businesses')}
               className="lg:hidden flex items-center gap-2 min-w-0 flex-1 text-left"
             >
               <VokiMark size={32} className="shrink-0" />
               <span className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-                {activeBusiness?.name || 'Select business'}
+                {isSuperAdmin ? 'Subscribers' : activeBusiness?.name || 'Select business'}
               </span>
-              <ChevronDown size={14} className="text-slate-400 shrink-0" />
+              {!isSuperAdmin && <ChevronDown size={14} className="text-slate-400 shrink-0" />}
             </button>
 
             <p className="hidden lg:flex items-center gap-2 text-sm min-w-0 flex-1">
@@ -425,23 +473,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </p>
 
             <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={() => navigate('/businesses')}
-                className="hidden lg:flex items-center gap-1.5 max-w-[180px] mr-1 px-2.5 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-200"
-              >
-                <span className="truncate">{activeBusiness?.name || 'Business'}</span>
-                <ChevronDown size={14} className="text-slate-400 shrink-0" />
-              </button>
+              {!isSuperAdmin && (
+                <button
+                  onClick={() => navigate('/businesses')}
+                  className="hidden lg:flex items-center gap-1.5 max-w-[180px] mr-1 px-2.5 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-200"
+                >
+                  <span className="truncate">{activeBusiness?.name || 'Business'}</span>
+                  <ChevronDown size={14} className="text-slate-400 shrink-0" />
+                </button>
+              )}
               <StatusCluster isOnline={isOnline} pendingSync={pendingSync} />
               <button
-                onClick={() => navigate('/search')}
+                onClick={() => navigate(isSuperAdmin ? '/admin/subscribers' : '/search')}
                 className="p-2 rounded-xl text-slate-500 hover:bg-white dark:hover:bg-slate-800 lg:hidden"
                 aria-label="Search"
               >
                 <Search size={18} />
               </button>
               <button
-                onClick={() => navigate('/notifications')}
+                onClick={() => navigate(isSuperAdmin ? '/admin/issues' : '/notifications')}
                 className="p-2 rounded-xl text-slate-500 hover:bg-white dark:hover:bg-slate-800"
                 aria-label="Notifications"
               >
@@ -462,7 +512,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main ref={mainRef} className="w-full min-w-0 px-3 pb-4 pt-1 sm:px-4 max-lg:min-h-0 max-lg:flex-1 max-lg:overflow-y-auto lg:px-6 lg:pb-8">
+        <main ref={mainRef} className="w-full min-h-0 min-w-0 flex-1 overflow-auto px-3 pb-8 pt-1 sm:px-4 lg:px-6">
           <PageTransition>{children}</PageTransition>
         </main>
       </div>

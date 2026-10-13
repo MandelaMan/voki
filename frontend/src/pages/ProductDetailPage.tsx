@@ -16,6 +16,7 @@ import {
   type ImagePreview,
 } from '../components/ui/ImageUploadPreview';
 import { formatCurrency, getApiErrorMessage, isProductOutOfStock } from '../lib/utils';
+import { BackgroundRemovalOption } from '../components/billing/PremiumNotice';
 import { productApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
 import { useBusinessStore } from '../stores';
@@ -28,6 +29,7 @@ export default function ProductDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [actionError, setActionError] = useState('');
   const [pendingPreviews, setPendingPreviews] = useState<ImagePreview[]>([]);
+  const [removeBackground, setRemoveBackground] = useState(false);
   const previewsRef = useRef(pendingPreviews);
   previewsRef.current = pendingPreviews;
 
@@ -65,11 +67,11 @@ export default function ProductDetailPage() {
     if (!pendingPreviews.length || !activeBusiness) return;
     setUploading(true);
     try {
-      await productApi.uploadImages(
-        id!,
-        activeBusiness.id,
-        pendingPreviews.map((p) => p.file)
-      );
+      const selected = pendingPreviews.map((preview) => preview.file);
+      const files = removeBackground
+        ? await Promise.all(selected.map((file) => productApi.removeBackground(file)))
+        : selected;
+      await productApi.uploadImages(id!, activeBusiness.id, files);
       revokePreviews(pendingPreviews);
       setPendingPreviews([]);
       setActionError('');
@@ -120,6 +122,7 @@ export default function ProductDetailPage() {
             onAdd={handleAddPending}
             onRemove={handleRemovePending}
           />
+          <BackgroundRemovalOption checked={removeBackground} onChange={setRemoveBackground} />
           {pendingPreviews.length > 0 && (
             <Button className="w-full" size="sm" onClick={handleUploadPending} loading={uploading}>
               Upload {pendingPreviews.length}

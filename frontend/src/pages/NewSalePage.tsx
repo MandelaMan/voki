@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Minus, Plus } from 'lucide-react';
 import { Button } from '../components/ui/Button';
@@ -12,7 +12,7 @@ import { ProductSearchBox } from '../components/products/ProductSearchBox';
 import { formatCurrency, getApiErrorMessage, getFirstInStockVariant, isProductOutOfStock } from '../lib/utils';
 import { productApi, saleApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
-import { useBusinessStore } from '../stores';
+import { useBusinessStore, usePremium } from '../stores';
 import { offlineQueue } from '../lib/offline';
 import { useOnlineStatus } from '../hooks/useOfflineSync';
 import type { Product, ProductVariant } from '../types';
@@ -40,10 +40,14 @@ export default function NewSalePage() {
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { activeBusiness } = useBusinessStore();
+  const isPremium = usePremium();
   const isOnline = useOnlineStatus();
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [promptMpesa, setPromptMpesa] = useState(true);
   const [stockError, setStockError] = useState('');
 
   const { data: preselectedProduct } = useQuery({
@@ -144,9 +148,15 @@ export default function NewSalePage() {
 
   const mutation = useMutation({
     mutationFn: async () => {
+      const sendPrompt = isPremium && isOnline && paymentMethod === 'MPESA' && promptMpesa;
       const saleData = {
         businessId: activeBusiness!.id,
         paymentMethod,
+        ...(isPremium ? {
+          customerName: customerName.trim() || undefined,
+          customerPhone: customerPhone.trim() || undefined,
+          promptMpesa: sendPrompt,
+        } : {}),
         items: cart.map((item) => ({
           productId: item.product.id,
           ...(item.variant?.id ? { variantId: item.variant.id } : {}),
@@ -171,6 +181,15 @@ export default function NewSalePage() {
     onSuccess: async (result) => {
       await refreshCommerce(queryClient);
       const offline = result && typeof result === 'object' && 'offline' in result;
+      if (
+        !offline
+        && result
+        && 'id' in result
+        && (result.paymentStatus === 'PENDING' || result.mpesaPrompt || result.promptError)
+      ) {
+        navigate(`/sales/${result.id}`);
+        return;
+      }
       const productIds = [...new Set(cart.map((item) => item.product.id))];
       navigate(!offline && productIds.length === 1 ? `/inventory/${productIds[0]}` : '/sales');
     },
@@ -262,7 +281,7 @@ export default function NewSalePage() {
             })}
           </div>
 
-          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
             <Select
               label="Payment Method"
               options={[
@@ -275,6 +294,41 @@ export default function NewSalePage() {
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
             />
+            {isPremium && (
+              <>
+                <Input
+                  label="Customer name"
+                  placeholder="Optional"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                />
+                <Input
+                  label="Customer phone"
+                  inputMode="tel"
+                  placeholder="07XX XXX XXX"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                />
+              </>
+            )}
+            {isPremium && paymentMethod === 'MPESA' && isOnline && (
+              <label className="flex items-start gap-2 text-caption cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={promptMpesa}
+                  onChange={(e) => setPromptMpesa(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded accent-primary-600"
+                />
+                <span>Prompt the customer to pay with M-Pesa</span>
+              </label>
+            )}
+            {!isPremium && paymentMethod === 'MPESA' && (
+              <p className="text-caption text-slate-500">
+                The sale is recorded as M-Pesa.{' '}
+                <Link to="/plan" className="font-medium text-primary-600">Premium</Link>
+                {' '}can also send the payment prompt to their phone.
+              </p>
+            )}
           </div>
 
           <div className="mt-4 space-y-1.5">
@@ -299,7 +353,14 @@ export default function NewSalePage() {
           <Button
             className="w-full mt-4"
             size="lg"
-            onClick={() => mutation.mutate()}
+            onClick={() => {
+              if (isPremium && isOnline && paymentMethod === 'MPESA' && promptMpesa && !customerPhone.trim()) {
+                setStockError('Enter the customer phone number to send the M-Pesa prompt.');
+                return;
+              }
+              setStockError('');
+              mutation.mutate();
+            }}
             loading={mutation.isPending}
             disabled={cart.length === 0}
           >

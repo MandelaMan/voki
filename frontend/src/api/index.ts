@@ -10,6 +10,22 @@ import type {
   DashboardStats,
   Notification,
   PaginatedResponse,
+  BillingSummary,
+  AdminOverview,
+  AdminAnalytics,
+  AdminUser,
+  AdminBusiness,
+  AdminProduct,
+  AdminSaleRow,
+  AdminPurchaseRow,
+  AdminRecord,
+  AdminIssues,
+  AdminSubscriber,
+  MpesaPrompt,
+  Receipt,
+  Customer,
+  CashUp,
+  RestockSuggestion,
 } from '../types';
 
 export const authApi = {
@@ -29,7 +45,12 @@ export const businessApi = {
   list: () => api.get('/businesses').then((r) => r.data.data as Business[]),
   get: (id: string) => api.get(`/businesses/${id}`).then((r) => r.data.data as Business),
   create: (data: Partial<Business>) => api.post('/businesses', data).then((r) => r.data.data as Business),
-  update: (id: string, data: Partial<Business>) => api.put(`/businesses/${id}`, data).then((r) => r.data.data),
+  update: (id: string, data: Partial<Business> & {
+    mpesaConsumerKey?: string;
+    mpesaConsumerSecret?: string;
+    mpesaPasskey?: string;
+    clearMpesaCredentials?: boolean;
+  }) => api.put(`/businesses/${id}`, data).then((r) => r.data.data as Business),
   delete: (id: string) => api.delete(`/businesses/${id}`),
 };
 
@@ -65,6 +86,31 @@ export const productApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then((r) => r.data.data);
   },
+  removeBackground: async (file: File) => {
+    const form = new FormData();
+    form.append('image', file);
+    try {
+      const response = await api.post('/images/remove-background', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        responseType: 'blob',
+      });
+      const base = file.name.replace(/\.[^.]+$/, '') || 'photo';
+      return new File([response.data], `${base}.png`, { type: 'image/png' });
+    } catch (error) {
+      const data = (error as { response?: { data?: unknown } }).response?.data;
+      if (data instanceof Blob) {
+        const text = await data.text();
+        try {
+          const parsed = JSON.parse(text) as { error?: { message?: string } };
+          if (parsed.error?.message) throw new Error(parsed.error.message);
+        } catch (parseError) {
+          if (parseError instanceof SyntaxError) throw error;
+          throw parseError;
+        }
+      }
+      throw error;
+    }
+  },
   restock: (id: string, data: Record<string, unknown>) =>
     api.post(`/products/${id}/restock`, data).then((r) => r.data.data as { product: Product; purchase: Purchase }),
 };
@@ -84,6 +130,12 @@ export const saleApi = {
     api.get(`/sales/${id}`, { params: { businessId } }).then((r) => r.data.data as Sale),
   create: (data: Record<string, unknown>) => api.post('/sales', data).then((r) => r.data.data as Sale),
   sync: (sales: Record<string, unknown>[]) => api.post('/sales/sync', { sales }).then((r) => r.data.data),
+  receipt: (id: string, businessId: string) =>
+    api.get(`/sales/${id}/receipt`, { params: { businessId } }).then((r) => r.data.data as Receipt),
+  promptMpesa: (id: string, phone: string) =>
+    api.post(`/sales/${id}/mpesa-prompt`, { phone }).then((r) => r.data.data as MpesaPrompt),
+  markPaid: (id: string, businessId: string, mpesaReceipt?: string) =>
+    api.post(`/sales/${id}/payment`, { businessId, mpesaReceipt }).then((r) => r.data.data as Sale),
 };
 
 export const dashboardApi = {
@@ -102,6 +154,62 @@ export const reportApi = {
     api.get('/reports/dead-stock', { params: { businessId, months } }).then((r) => r.data.data),
   purchases: (businessId: string, startDate?: string, endDate?: string) =>
     api.get('/reports/purchases', { params: { businessId, startDate, endDate } }).then((r) => r.data.data),
+  cashUp: (businessId: string, date?: string) =>
+    api.get('/reports/cash-up', { params: { businessId, date } }).then((r) => r.data.data as CashUp),
+  restock: (businessId: string) =>
+    api.get('/reports/restock', { params: { businessId } }).then((r) => r.data.data as RestockSuggestion[]),
+};
+
+export const billingApi = {
+  summary: (businessId?: string) =>
+    api.get('/billing', { params: { businessId } }).then((r) => r.data.data as BillingSummary),
+  subscribe: (phone: string) =>
+    api.post('/billing/subscribe', { phone }).then((r) => r.data.data as { paymentId: string; prompt: MpesaPrompt }),
+  payment: (id: string) =>
+    api.get(`/billing/payments/${id}`).then((r) => r.data.data as {
+      paymentId: string;
+      status: MpesaPrompt['status'];
+      simulated: boolean;
+      prompt: MpesaPrompt | null;
+      plan: 'FREE' | 'PREMIUM';
+      isPremium: boolean;
+      planExpiresAt?: string | null;
+    }),
+};
+
+export const mpesaApi = {
+  getPrompt: (id: string) => api.get(`/mpesa/prompts/${id}`).then((r) => r.data.data as MpesaPrompt),
+  simulate: (id: string, action: 'SUCCESS' | 'CANCELLED' = 'SUCCESS') =>
+    api.post(`/mpesa/prompts/${id}/simulate`, { action }).then((r) => r.data.data as MpesaPrompt),
+};
+
+export const adminApi = {
+  overview: (search?: string) =>
+    api.get('/admin', { params: { search: search || undefined } }).then((r) => r.data.data as AdminOverview),
+  analytics: () => api.get('/admin/analytics').then((r) => r.data.data as AdminAnalytics),
+  setPrice: (priceKes: number) =>
+    api.put('/admin/pricing', { priceKes }).then((r) => r.data.data as AdminOverview['pricing']),
+  setPlan: (userId: string, plan: 'FREE' | 'PREMIUM', days?: number) =>
+    api.put(`/admin/users/${userId}/plan`, { plan, days }).then((r) => r.data.data as AdminUser),
+  setStatus: (userId: string, suspended: boolean) =>
+    api.put(`/admin/users/${userId}/status`, { suspended }).then((r) => r.data.data as AdminUser),
+  businesses: (search?: string) =>
+    api.get('/admin/businesses', { params: { search: search || undefined } }).then((r) => r.data.data as AdminBusiness[]),
+  inventory: (search?: string, status?: string) =>
+    api.get('/admin/inventory', { params: { search: search || undefined, status: status || undefined } }).then((r) => r.data.data as AdminProduct[]),
+  sales: (search?: string) =>
+    api.get('/admin/sales', { params: { search: search || undefined } }).then((r) => r.data.data as AdminSaleRow[]),
+  purchases: (search?: string) =>
+    api.get('/admin/purchases', { params: { search: search || undefined } }).then((r) => r.data.data as AdminPurchaseRow[]),
+  records: (kind: 'categories' | 'suppliers' | 'customers', search?: string) =>
+    api.get(`/admin/records/${kind}`, { params: { search: search || undefined } }).then((r) => r.data.data as AdminRecord[]),
+  issues: () => api.get('/admin/issues').then((r) => r.data.data as AdminIssues),
+  subscriber: (userId: string) => api.get(`/admin/users/${userId}`).then((r) => r.data.data as AdminSubscriber),
+};
+
+export const customerApi = {
+  list: (businessId: string) =>
+    api.get('/customers', { params: { businessId } }).then((r) => r.data.data as Customer[]),
 };
 
 export const notificationApi = {

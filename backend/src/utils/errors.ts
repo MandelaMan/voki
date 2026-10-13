@@ -38,3 +38,9 @@ export class ConflictError extends AppError {
     super(409, message, 'CONFLICT');
   }
 }
+
+export class PremiumRequiredError extends AppError {
+  constructor(message = 'This is included with Premium.') {
+    super(403, message, 'PREMIUM_REQUIRED');
+  }
+}

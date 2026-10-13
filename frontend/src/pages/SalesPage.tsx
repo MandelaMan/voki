@@ -225,7 +225,7 @@ export default function SalesPage() {
                   thumbnailAlt={thumb.name}
                   icon={<ShoppingBag size={18} />}
                   title={sale.items?.map((i) => i.product?.name).filter(Boolean).join(', ') || 'Sale'}
-                  subtitle={`${formatRelative(sale.saleDate)} · ${PAYMENT_LABELS[sale.paymentMethod] || sale.paymentMethod}`}
+                  subtitle={`${formatRelative(sale.saleDate)} · ${sale.paymentStatus === 'PENDING' ? 'Waiting for M-Pesa' : (PAYMENT_LABELS[sale.paymentMethod] || sale.paymentMethod)}`}
                   trailing={
                     <div>
                       <p className="text-body-medium font-bold text-primary-600">{formatCurrency(Number(sale.totalAmount), currency)}</p>

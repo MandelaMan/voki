@@ -10,6 +10,7 @@ import { saleService } from '../services/sale.service';
 import { dashboardService } from '../services/dashboard.service';
 import { reportService } from '../services/report.service';
 import { notificationService } from '../services/notification.service';
+import { mpesaService } from '../services/mpesa.service';
 import { AuthRequest } from '../middleware/auth';
 import { getValidated } from '../middleware/validate';
 
@@ -132,6 +133,26 @@ export const saleController = {
   sync: async (req: AuthRequest, res: Response, next: NextFunction) => {
     try { ok(res, await saleService.syncOffline(req.user!.userId, req.body.sales)); } catch (e) { next(e); }
   },
+  receipt: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      ok(res, await saleService.receipt(req.user!.userId, param(req.params.id), req.query.businessId as string));
+    } catch (e) { next(e); }
+  },
+  prompt: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      ok(res, await mpesaService.requestSalePayment(req.user!.userId, param(req.params.id), req.body.phone), 201);
+    } catch (e) { next(e); }
+  },
+  markPaid: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      ok(res, await saleService.markPaid(
+        req.user!.userId,
+        param(req.params.id),
+        req.body.businessId,
+        req.body.mpesaReceipt
+      ));
+    } catch (e) { next(e); }
+  },
 };
 
 export const dashboardController = {
@@ -158,6 +179,15 @@ export const reportController = {
   },
   purchases: async (req: AuthRequest, res: Response, next: NextFunction) => {
     try { ok(res, await reportService.purchasesReport(req.query.businessId as string, req.query.startDate as string, req.query.endDate as string)); } catch (e) { next(e); }
+  },
+  cashUp: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      ok(res, await reportService.cashUp(req.user!.userId, req.query.businessId as string, req.query.date as string | undefined));
+    } catch (e) { next(e); }
+  },
+  restock: async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try { ok(res, await reportService.restockSuggestions(req.user!.userId, req.query.businessId as string)); }
+    catch (e) { next(e); }
   },
 };
 

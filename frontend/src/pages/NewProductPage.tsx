@@ -16,6 +16,7 @@ import {
   revokePreviews,
   type ImagePreview,
 } from '../components/ui/ImageUploadPreview';
+import { BackgroundRemovalOption } from '../components/billing/PremiumNotice';
 import { productApi, categoryApi, supplierApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
 import { useBusinessStore } from '../stores';
@@ -66,6 +67,7 @@ export default function NewProductPage() {
   const { activeBusiness } = useBusinessStore();
   const [hasVariants, setHasVariants] = useState(false);
   const [images, setImages] = useState<File[]>([]);
+  const [removeBackground, setRemoveBackground] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([]);
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -133,7 +135,10 @@ export default function NewProductPage() {
       };
       const product = await productApi.create(payload);
       if (images.length > 0) {
-        await productApi.uploadImages(product.id, activeBusiness!.id, images);
+        const files = removeBackground
+          ? await Promise.all(images.map((file) => productApi.removeBackground(file)))
+          : images;
+        await productApi.uploadImages(product.id, activeBusiness!.id, files);
       }
       return product;
     },
@@ -223,6 +228,7 @@ export default function NewProductPage() {
             onAdd={handleAddImages}
             onRemove={handleRemoveImage}
           />
+          <BackgroundRemovalOption checked={removeBackground} onChange={setRemoveBackground} />
         </FormSection>
 
         <div className="surface-card p-4 flex items-center gap-3">
