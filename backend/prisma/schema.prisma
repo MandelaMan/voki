@@ -254,7 +254,6 @@ model Sale {
   items          SaleItem[]
   mpesaPrompts   MpesaPrompt[]
 
-  @@unique([businessId, receiptNumber])
   @@index([businessId])
   @@index([customerId])
   @@index([saleDate])
