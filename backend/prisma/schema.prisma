@@ -243,7 +243,7 @@ model Sale {
   notes          String?        @db.Text
   synced         Boolean        @default(true)
   offlineId      String?        @unique
-  receiptNumber  String?        @unique
+  receiptNumber  String?
   paymentStatus  PaymentStatus  @default(PAID)
   mpesaReceipt   String?
   createdAt      DateTime       @default(now())
@@ -254,6 +254,7 @@ model Sale {
   items          SaleItem[]
   mpesaPrompts   MpesaPrompt[]
 
+  @@unique([businessId, receiptNumber])
   @@index([businessId])
   @@index([customerId])
   @@index([saleDate])
