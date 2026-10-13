@@ -218,6 +218,7 @@ body {
 }
 
 .page-transition {
+  width: 100%;
   animation: page-transition 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -225,6 +226,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  width: 100%;
 }
 
 .scrollbar-hide {

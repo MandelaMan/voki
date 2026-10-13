@@ -462,7 +462,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main ref={mainRef} className="mx-auto w-full max-w-[1200px] px-3 pb-4 pt-1 sm:px-4 max-lg:min-h-0 max-lg:flex-1 max-lg:overflow-y-auto lg:px-6 lg:pb-8">
+        <main ref={mainRef} className="w-full min-w-0 px-3 pb-4 pt-1 sm:px-4 max-lg:min-h-0 max-lg:flex-1 max-lg:overflow-y-auto lg:px-6 lg:pb-8">
           <PageTransition>{children}</PageTransition>
         </main>
       </div>
