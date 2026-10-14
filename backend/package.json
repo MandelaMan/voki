@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "predev": "prisma db push --skip-generate",
     "dev": "tsx watch src/index.ts",
     "build": "prisma generate && tsc",
     "start": "prisma db push --skip-generate --accept-data-loss && node dist/index.js",

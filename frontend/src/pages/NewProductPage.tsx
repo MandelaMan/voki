@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Plus, X, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { Form } from '../components/ui/Form';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Alert } from '../components/ui/Alert';
@@ -123,13 +124,13 @@ export default function NewProductPage() {
         description: data.description || undefined,
         categoryId: data.categoryId?.trim() ? data.categoryId : undefined,
         supplierId: data.supplierId?.trim() ? data.supplierId : undefined,
-        buyingPrice: Number(data.buyingPrice),
-        sellingPrice: Number(data.sellingPrice),
+        buyingPrice: Math.round(Number(data.buyingPrice) || 0),
+        sellingPrice: Math.round(Number(data.sellingPrice) || 0),
         quantity: 0,
         variants: hasVariants ? data.variants?.map((v) => ({
           ...v,
-          buyingPrice: Number(v.buyingPrice),
-          sellingPrice: Number(v.sellingPrice),
+          buyingPrice: Math.round(Number(v.buyingPrice) || 0),
+          sellingPrice: Math.round(Number(v.sellingPrice) || 0),
           quantity: 0,
         })) : undefined,
       };
@@ -149,17 +150,16 @@ export default function NewProductPage() {
       setTimeout(() => navigate('/inventory'), 1500);
     },
     onError: (error) => {
-      setSaveError(getApiErrorMessage(error, 'Failed to save product. Please try again.'));
+      setSaveError(getApiErrorMessage(error, 'Could not save the product. Please try again.'));
     },
   });
 
   if (!activeBusiness) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Add Product" subtitle="Create the item you sell. Stock starts at zero." />
+        <PageHeader title="Add Product" />
         <Alert variant="warning">
-          You need to set up a business before adding products.{' '}
-          <Link to="/onboarding" className="font-semibold underline">Set up your business</Link>
+          <Link to="/onboarding" className="font-semibold underline">Set up a business</Link> before adding products.
         </Alert>
       </div>
     );
@@ -167,20 +167,16 @@ export default function NewProductPage() {
 
   return (
     <div className="page-stack">
-      <PageHeader title="Add Product" subtitle="Name, prices, and photos. This does not add stock." />
+      <PageHeader title="Add Product" subtitle="Stock starts at zero. Add units with Record Purchase." />
 
-      <Alert variant="info">
-        Stock stays at zero until you{' '}
-        <Link to="/purchases/new" className="font-semibold underline">record a purchase</Link>.
-      </Alert>
-
-      <form
+      <Form
+        busy={isSubmitting || mutation.isPending}
         onSubmit={handleSubmit((d) => {
           setSaveError('');
           if (hasVariants) {
             const variantResult = z.array(variantSchema).min(1, 'Add at least one variant').safeParse(d.variants);
             if (!variantResult.success) {
-              setSaveError(variantResult.error.issues[0]?.message || 'Please fill in all variant fields');
+              setSaveError(variantResult.error.issues[0]?.message || 'Fill in every variant field.');
               return;
             }
           }
@@ -216,10 +212,9 @@ export default function NewProductPage() {
 
         <FormSection title="Prices">
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Buy price" type="number" step="0.01" min="0" error={errors.buyingPrice?.message} {...register('buyingPrice')} />
-            <Input label="Sell price" type="number" step="0.01" min="0" error={errors.sellingPrice?.message} {...register('sellingPrice')} />
+            <Input label="Buy price" type="number" step={1} min="0" error={errors.buyingPrice?.message} {...register('buyingPrice')} />
+            <Input label="Sell price" type="number" step={1} min="0" error={errors.sellingPrice?.message} {...register('sellingPrice')} />
           </div>
-          <p className="text-caption text-slate-500">These are the usual prices. Quantity is added when you buy stock.</p>
         </FormSection>
 
         <FormSection title="Photos">
@@ -240,7 +235,7 @@ export default function NewProductPage() {
             className="w-5 h-5 rounded-lg accent-primary-600 cursor-pointer"
           />
           <label htmlFor="hasVariants" className="text-body-medium cursor-pointer flex-1">
-            This product has variants (size, color, etc.)
+            This product has variants
           </label>
         </div>
 
@@ -261,8 +256,8 @@ export default function NewProductPage() {
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <Input placeholder="Buy" type="number" step="0.01" min="0" {...register(`variants.${index}.buyingPrice`)} />
-                  <Input placeholder="Sell" type="number" step="0.01" min="0" {...register(`variants.${index}.sellingPrice`)} />
+                  <Input placeholder="Buy" type="number" step={1} min="0" {...register(`variants.${index}.buyingPrice`)} />
+                  <Input placeholder="Sell" type="number" step={1} min="0" {...register(`variants.${index}.sellingPrice`)} />
                 </div>
               </div>
             ))}
@@ -272,7 +267,7 @@ export default function NewProductPage() {
         <Button type="submit" className="w-full" size="lg" loading={isSubmitting || mutation.isPending} disabled={saveSuccess}>
           {saveSuccess ? 'Saved!' : 'Save product'}
         </Button>
-      </form>
+      </Form>
     </div>
   );
 }

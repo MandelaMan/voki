@@ -5,12 +5,14 @@ import { ArrowLeft } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { FormFields } from '../components/ui/Form';
 import { Alert } from '../components/ui/Alert';
 import { Skeleton } from '../components/ui/Badge';
 import { PremiumNotice } from '../components/billing/PremiumNotice';
 import { mpesaApi, saleApi } from '../api';
 import { useBusinessStore, usePremium } from '../stores';
 import { formatCurrency, formatDate, getApiErrorMessage, getImageUrl } from '../lib/utils';
+import { ProfitAmount } from '../components/ui/ProfitAmount';
 import { refreshCommerce } from '../lib/refresh';
 
 export default function SaleDetailPage() {
@@ -102,7 +104,8 @@ export default function SaleDetailPage() {
       </div>
       {actionError && <Alert variant="error">{actionError}</Alert>}
       {sale.paymentStatus === 'PENDING' && (
-        <Card className="!p-4 space-y-3">
+        <Card className="!p-4">
+          <FormFields busy={simulate.isPending || retryPrompt.isPending || markPaid.isPending} className="space-y-3">
           <p className="text-body-medium font-semibold">
             {prompt?.status === 'PENDING'
               ? `Waiting for the PIN on ${prompt.phone}`
@@ -145,6 +148,7 @@ export default function SaleDetailPage() {
           <Button className="w-full" variant="secondary" loading={markPaid.isPending} onClick={() => markPaid.mutate()}>
             Mark as paid
           </Button>
+          </FormFields>
         </Card>
       )}
       {isPremium ? (
@@ -154,7 +158,7 @@ export default function SaleDetailPage() {
       ) : (
         <PremiumNotice
           title="Receipts are on Premium"
-          description="Print a receipt for this sale, or send it to the customer on WhatsApp."
+          description="Print a receipt or send it on WhatsApp."
         />
       )}
       <Card className="!p-3 grid grid-cols-2 gap-3">
@@ -163,8 +167,8 @@ export default function SaleDetailPage() {
           <p className="font-semibold">{formatCurrency(Number(sale.totalAmount), currency)}</p>
         </div>
         <div>
-          <p className="text-[11px] uppercase text-slate-400">Profit</p>
-          <p className="font-semibold text-emerald-600">{formatCurrency(Number(sale.totalProfit), currency)}</p>
+          <p className="text-[11px] uppercase text-slate-400">{Number(sale.totalProfit) < 0 ? 'Loss' : 'Profit'}</p>
+          <ProfitAmount amount={Number(sale.totalProfit)} currency={currency} className="font-semibold" />
         </div>
       </Card>
       <Card className="!p-0 overflow-hidden">
@@ -199,6 +203,7 @@ export default function SaleDetailPage() {
                         <span>Removed product</span>
                       )}
                       {item.variant && <p className="text-[11px] text-slate-400">{item.variant.variantType}: {item.variant.variantValue}</p>}
+                      <ProfitAmount amount={Number(item.profit)} currency={currency} badge className="mt-1" />
                     </div>
                   </div>
                 </td>

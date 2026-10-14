@@ -6,6 +6,7 @@ import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
+import { FormFields } from '../components/ui/Form';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Skeleton } from '../components/ui/Badge';
 import { formatCurrency, getApiErrorMessage } from '../lib/utils';
@@ -45,7 +46,7 @@ export default function AdminPricingPage() {
   if (!isAdmin) {
     return (
       <div className="page-stack">
-        <PageHeader title="Pricing" />
+        <PageHeader title="Pricing" subtitle="What new subscribers pay for Premium" />
         <Alert variant="error">This account is not a super admin.</Alert>
       </div>
     );
@@ -68,12 +69,9 @@ export default function AdminPricingPage() {
           </div>
           <div>
             <h2 className="text-body-medium font-semibold">Premium price</h2>
-            <p className="text-caption text-slate-500 mt-0.5">
-              {pricing ? `A paid period is ${pricing.periodDays} days.` : 'New checkouts use this amount.'}
-            </p>
           </div>
         </div>
-        <div className="p-4 sm:p-5 flex flex-col gap-3 sm:flex-row sm:items-end">
+        <FormFields busy={savePrice.isPending} className="p-4 sm:p-5 flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="sm:w-48">
             <Input
               label="Amount in Ksh"
@@ -85,7 +83,7 @@ export default function AdminPricingPage() {
           <Button loading={savePrice.isPending} disabled={!priceReady || priceValue === pricing?.priceKes} onClick={() => savePrice.mutate()}>
             Save price
           </Button>
-        </div>
+        </FormFields>
       </Card>
     </div>
   );

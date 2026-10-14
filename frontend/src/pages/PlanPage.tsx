@@ -13,6 +13,7 @@ import {
 import { billingApi, businessApi, mpesaApi } from '../api';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
+import { FormFields } from '../components/ui/Form';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -155,7 +156,6 @@ export default function PlanPage() {
                 </h2>
                 <p className="text-caption text-slate-500 mt-0.5">
                   {price} every {billing?.periodDays || 30} days
-                  {billing?.isPremium ? ' · covers every shop' : ' · inventory, sales, and reports stay free'}
                 </p>
               </div>
             </div>
@@ -169,7 +169,7 @@ export default function PlanPage() {
           {showPay && (
             <div className="border-t border-slate-100 dark:border-slate-800 px-4 py-4 sm:px-5 space-y-3">
               {!prompt && (
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                <FormFields busy={subscribe.isPending} className="flex flex-col gap-2 sm:flex-row sm:items-end">
                   <div className="flex-1">
                     <Input
                       label="M-Pesa phone"
@@ -189,7 +189,7 @@ export default function PlanPage() {
                       {billing?.isPremium ? 'Renew' : 'Pay with M-Pesa'}
                     </Button>
                   </div>
-                </div>
+                </FormFields>
               )}
               {prompt && (
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -215,9 +215,6 @@ export default function PlanPage() {
                     </div>
                   )}
                 </div>
-              )}
-              {billing?.simulate && !prompt && (
-                <p className="text-caption text-slate-500">Sandbox only, until Safaricom is connected.</p>
               )}
             </div>
           )}
@@ -255,16 +252,13 @@ export default function PlanPage() {
           <div className="flex items-start justify-between gap-3 px-4 py-4 sm:px-5 border-b border-slate-100 dark:border-slate-800">
             <div className="min-w-0">
               <h3 className="text-heading">Customer payments</h3>
-              <p className="text-caption text-slate-500 mt-0.5">
-                Lipa na M-Pesa for {activeBusiness.name}. Credentials stay on the server.
-              </p>
             </div>
             <span className={`text-micro px-2 py-0.5 rounded-full shrink-0 ${mpesaReady ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800'}`}>
               {mpesaReady ? 'Connected' : 'Not set'}
             </span>
           </div>
 
-          <div className="p-4 sm:p-5 space-y-4">
+          <FormFields busy={saveMpesa.isPending || clearMpesa.isPending} className="p-4 sm:p-5 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select
                 label="Account type"
@@ -331,7 +325,7 @@ export default function PlanPage() {
                 </Button>
               </div>
             </div>
-          </div>
+          </FormFields>
         </Card>
       )}
     </div>

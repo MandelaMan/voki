@@ -3,6 +3,7 @@ import { prisma } from '../utils/prisma';
 import { NotFoundError } from '../utils/errors';
 import { activityRepository } from '../repositories/activity.repository';
 import { planService } from './plan.service';
+import { parsePaymentMethods, serializePaymentMethods } from '../utils/paymentMethods';
 
 function presentBusiness<T extends {
   mpesaType: string | null;
@@ -19,7 +20,8 @@ function presentBusiness<T extends {
     && business.mpesaPasskey
   );
   const { mpesaConsumerKey: _key, mpesaConsumerSecret: _secret, mpesaPasskey: _passkey, ...safe } = business;
-  return { ...safe, mpesaReady };
+  const stored = 'paymentMethods' in business ? (business as { paymentMethods?: string | null }).paymentMethods : null;
+  return { ...safe, mpesaReady, paymentMethods: parsePaymentMethods(stored) };
 }
 
 export const businessService = {
@@ -48,9 +50,17 @@ export const businessService = {
     description?: string;
     currency?: string;
     lowStockThreshold?: number;
+    paymentMethods: string[];
   }) {
     const business = await prisma.business.create({
-      data: { userId, ...data, currency: data.currency || 'KES' },
+      data: {
+        userId,
+        name: data.name,
+        description: data.description,
+        currency: data.currency || 'KES',
+        lowStockThreshold: data.lowStockThreshold,
+        paymentMethods: serializePaymentMethods(data.paymentMethods),
+      },
     });
     await activityRepository.log({
       userId,
@@ -67,6 +77,7 @@ export const businessService = {
     description: string;
     currency: string;
     lowStockThreshold: number;
+    paymentMethods: string[];
     mpesaType: 'PAYBILL' | 'TILL';
     mpesaShortCode: string;
     mpesaAccount: string;
@@ -94,6 +105,7 @@ export const businessService = {
     if (data.description !== undefined) next.description = data.description;
     if (data.currency !== undefined) next.currency = data.currency;
     if (data.lowStockThreshold !== undefined) next.lowStockThreshold = data.lowStockThreshold;
+    if (data.paymentMethods !== undefined) next.paymentMethods = serializePaymentMethods(data.paymentMethods);
 
     if (data.clearMpesaCredentials) {
       next.mpesaType = null;

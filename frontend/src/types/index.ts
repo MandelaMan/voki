@@ -18,6 +18,7 @@ export interface Business {
   description?: string;
   logo?: string;
   currency: string;
+  paymentMethods?: Array<'CASH' | 'CARD' | 'MPESA' | 'BANK_TRANSFER' | 'OTHER'>;
   lowStockThreshold: number;
   mpesaType?: 'PAYBILL' | 'TILL' | null;
   mpesaShortCode?: string | null;
@@ -448,7 +449,12 @@ export interface Notification {
 }
 
 export interface DashboardStats {
-  todaySales: { count: number; revenue: number; profit: number };
+  todaySales: {
+    count: number;
+    revenue: number;
+    profit: number;
+    collections?: Array<{ method: string; amount: number }>;
+  };
   monthSales: { revenue: number; profit: number };
   inventory: { totalProducts: number; totalItems: number; totalValue: number };
   stockAlerts: { lowStock: number; outOfStock: number };

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, PackagePlus, Plus, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { Form } from '../components/ui/Form';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
@@ -65,13 +66,13 @@ export default function RestockProductPage() {
           label: `${v.variantType}: ${v.variantValue}`,
           currentStock: v.remainingQuantity,
           quantity: 0,
-          unitCost: Number(v.buyingPrice),
-          sellingPrice: Number(v.sellingPrice),
+          unitCost: Math.round(Number(v.buyingPrice) || 0),
+          sellingPrice: Math.round(Number(v.sellingPrice) || 0),
         }))
       );
     } else {
-      setUnitCost(Number(product.buyingPrice));
-      setSellingPrice(Number(product.sellingPrice));
+      setUnitCost(Math.round(Number(product.buyingPrice) || 0));
+      setSellingPrice(Math.round(Number(product.sellingPrice) || 0));
     }
   }, [product]);
 
@@ -136,7 +137,7 @@ export default function RestockProductPage() {
       navigate(`/inventory/${id}`);
     },
     onError: (error) => {
-      setSaveError(getApiErrorMessage(error, 'Failed to restock product. Please try again.'));
+      setSaveError(getApiErrorMessage(error, 'Could not restock this product. Please try again.'));
     },
   });
 
@@ -144,7 +145,7 @@ export default function RestockProductPage() {
     return (
       <div className="page-stack">
         <PageHeader title="Restock Product" />
-        <Alert variant="warning">You need to set up a business before restocking.</Alert>
+        <Alert variant="warning">Set up a business first.</Alert>
       </div>
     );
   }
@@ -179,15 +180,12 @@ export default function RestockProductPage() {
         {product.sku && <p className="text-caption text-slate-400 mt-1">SKU: {product.sku}</p>}
       </Card>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <Form busy={mutation.isPending || createSupplier.isPending} onSubmit={handleSubmit} className="space-y-4">
         {saveError && <Alert variant="error">{saveError}</Alert>}
 
         {product.hasVariants && product.variants && product.variants.length > 0 ? (
           <div className="space-y-3">
             <h3 className="text-label">Restock by variant</h3>
-            <p className="text-caption text-slate-500">
-              Add stock for each size, color, or other variant separately.
-            </p>
             {variantRows.map((row) => (
               <div
                 key={row.variantId}
@@ -210,7 +208,7 @@ export default function RestockProductPage() {
                     label="Buy price"
                     type="number"
                     min={0}
-                    step="0.01"
+                    step={1}
                     value={row.unitCost || ''}
                     onChange={(e) => updateVariantRow(row.variantId, 'unitCost', Number(e.target.value) || 0)}
                   />
@@ -219,7 +217,7 @@ export default function RestockProductPage() {
                       label="Sell price"
                       type="number"
                       min={0}
-                      step="0.01"
+                      step={1}
                       value={row.sellingPrice || ''}
                       onChange={(e) => updateVariantRow(row.variantId, 'sellingPrice', Number(e.target.value) || 0)}
                     />
@@ -243,7 +241,7 @@ export default function RestockProductPage() {
                 label="Buy price"
                 type="number"
                 min={0}
-                step="0.01"
+                step={1}
                 value={unitCost}
                 onChange={(e) => setUnitCost(Number(e.target.value) || 0)}
               />
@@ -252,10 +250,10 @@ export default function RestockProductPage() {
               label="Sell price"
               type="number"
               min={0}
-              step="0.01"
+              step={1}
               value={sellingPrice}
               onChange={(e) => setSellingPrice(Number(e.target.value) || 0)}
-              hint="Update if your cost went up and you need to adjust pricing"
+              hint="Change it if your cost went up."
             />
           </div>
         )}
@@ -303,7 +301,7 @@ export default function RestockProductPage() {
         <Button type="submit" className="w-full" size="lg" loading={mutation.isPending}>
           <PackagePlus size={20} /> Restock Product
         </Button>
-      </form>
+      </Form>
     </div>
   );
 }
@@ -357,7 +355,7 @@ function SupplierPicker({
         placeholder="Search or type a new supplier"
         value={query}
         onChange={(e) => onQuery(e.target.value)}
-        hint="Pick one you already use, or add a name to save it for next time."
+        hint="Pick one below, or type a name to add it."
       />
       {suppliers.length > 0 && (
         <div className="flex flex-wrap gap-1.5">

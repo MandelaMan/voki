@@ -70,10 +70,10 @@ export function LegalDocument({
   if (isAuthenticated) return article;
 
   return (
-    <div className="min-h-svh bg-[#eef3f9] dark:bg-slate-950">
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-[#eef3f9]/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+    <div className="page-transition min-h-svh bg-[#e7eefb] dark:bg-slate-950">
+      <header className="sticky top-0 z-30 border-b border-primary-100 bg-[#e7eefb]/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
         <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
-          <Link to="/login" className="flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <Link to="/login" className="flex items-center gap-1.5 text-sm font-semibold text-primary-700 dark:text-slate-300">
             <ArrowLeft size={16} />
             Sign in
           </Link>

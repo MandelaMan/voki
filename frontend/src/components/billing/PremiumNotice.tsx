@@ -9,7 +9,7 @@ export function PremiumNotice({
   description,
 }: {
   title: string;
-  description: string;
+  description?: string;
 }) {
   return (
     <Card className="!p-4">
@@ -19,7 +19,7 @@ export function PremiumNotice({
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-body-medium font-semibold">{title}</p>
-          <p className="text-caption text-slate-500 mt-0.5">{description}</p>
+          {description && <p className="text-caption text-slate-500 mt-0.5">{description}</p>}
           <Button to="/plan" size="sm" variant="soft" className="mt-3">See Premium</Button>
         </div>
       </div>

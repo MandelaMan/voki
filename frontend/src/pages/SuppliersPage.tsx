@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, X } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { FormFields } from '../components/ui/Form';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Card } from '../components/ui/Card';
@@ -105,14 +106,15 @@ export default function SuppliersPage() {
     <div className="page-stack">
       <PageHeader
         title="Suppliers"
-        subtitle="Vendors linked to the products they supply"
+        subtitle="Who you buy from and what they supply"
         action={<Button size="sm" onClick={() => { setEditingId(null); setForm(emptyForm); setShowForm(!showForm); }}><Plus size={18} /> Add</Button>}
       />
 
       {actionError && <Alert variant="error">{actionError}</Alert>}
 
       {(showForm || editingId) && (
-        <Card className="space-y-3 !p-3">
+        <Card className="!p-3">
+          <FormFields busy={createMutation.isPending || updateMutation.isPending} className="space-y-3">
           <Input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <Input placeholder="Location" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           <Input placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
@@ -130,6 +132,7 @@ export default function SuppliersPage() {
               <Button variant="secondary" onClick={() => { setEditingId(null); setForm(emptyForm); }}>Cancel</Button>
             )}
           </div>
+          </FormFields>
         </Card>
       )}
 
@@ -179,7 +182,7 @@ export default function SuppliersPage() {
               )}
 
               {attachFor === supplier.id && (
-                <div className="flex flex-col sm:flex-row gap-2">
+                <FormFields busy={attachMutation.isPending} className="flex flex-col sm:flex-row gap-2">
                   <div className="flex-1 min-w-0">
                     <Select
                       value={productId}
@@ -193,7 +196,7 @@ export default function SuppliersPage() {
                   <Button size="sm" disabled={!productId} loading={attachMutation.isPending} onClick={() => attachMutation.mutate()}>
                     Attach
                   </Button>
-                </div>
+                </FormFields>
               )}
             </Card>
           );

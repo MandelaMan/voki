@@ -1,4 +1,32 @@
 import { prisma } from '../utils/prisma';
+import { wholeAmount } from '../utils/money';
+import { PAYMENT_METHODS, parsePaymentMethods, type PaymentMethodCode } from '../utils/paymentMethods';
+
+function todayCollections(
+  enabled: PaymentMethodCode[],
+  grouped: Array<{ paymentMethod: string; _sum: { totalAmount: unknown } }>,
+  totalRevenue: number,
+) {
+  const amounts = new Map<PaymentMethodCode, number>();
+  for (const method of enabled) amounts.set(method, 0);
+  for (const row of grouped) {
+    const method = row.paymentMethod as PaymentMethodCode;
+    if (!PAYMENT_METHODS.includes(method)) continue;
+    amounts.set(method, (amounts.get(method) || 0) + wholeAmount(row._sum.totalAmount));
+  }
+  const rows = PAYMENT_METHODS
+    .filter((method) => amounts.has(method))
+    .map((method) => ({ method, amount: amounts.get(method) || 0 }));
+  const drift = wholeAmount(totalRevenue) - rows.reduce((sum, row) => sum + row.amount, 0);
+  if (drift !== 0 && rows.length > 0) {
+    const index = rows.reduce((best, row, i) => (row.amount > rows[best].amount ? i : best), 0);
+    rows[index] = { ...rows[index], amount: rows[index].amount + drift };
+  }
+  return {
+    revenue: rows.reduce((sum, row) => sum + row.amount, 0),
+    collections: rows,
+  };
+}
 
 export const dashboardService = {
   async getStats(businessId: string) {
@@ -15,6 +43,8 @@ export const dashboardService = {
       recentPurchases,
       recentSales,
       topProducts,
+      todayByMethod,
+      business,
     ] = await Promise.all([
       prisma.sale.aggregate({
         where: { businessId, deletedAt: null, saleDate: { gte: today } },
@@ -55,6 +85,15 @@ export const dashboardService = {
         orderBy: { _sum: { quantity: 'desc' } },
         take: 5,
       }),
+      prisma.sale.groupBy({
+        by: ['paymentMethod'],
+        where: { businessId, deletedAt: null, saleDate: { gte: today } },
+        _sum: { totalAmount: true },
+      }),
+      prisma.business.findUnique({
+        where: { id: businessId },
+        select: { paymentMethods: true },
+      }),
     ]);
 
     const topProductIds = topProducts.map((p) => p.productId);
@@ -89,11 +128,18 @@ export const dashboardService = {
       ORDER BY month ASC
     `.catch(() => []);
 
+    const collections = todayCollections(
+      parsePaymentMethods(business?.paymentMethods),
+      todayByMethod,
+      Number(todaySales._sum.totalAmount || 0),
+    );
+
     return {
       todaySales: {
         count: todaySales._count,
-        revenue: Number(todaySales._sum.totalAmount || 0),
+        revenue: collections.revenue,
         profit: Number(todaySales._sum.totalProfit || 0),
+        collections: collections.collections,
       },
       monthSales: {
         revenue: Number(monthSales._sum.totalAmount || 0),

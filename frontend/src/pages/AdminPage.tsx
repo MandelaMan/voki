@@ -9,6 +9,7 @@ import { Card, HeroCard, StatCard } from '../components/ui/Card';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Skeleton } from '../components/ui/Badge';
 import { formatCurrency, formatDate } from '../lib/utils';
+import { ProfitAmount } from '../components/ui/ProfitAmount';
 import { useAuthStore } from '../stores';
 
 export default function AdminPage() {
@@ -27,7 +28,7 @@ export default function AdminPage() {
   if (!isAdmin) {
     return (
       <div className="page-stack">
-        <PageHeader title="Overview" />
+        <PageHeader title="Overview" subtitle="What your subscribers are doing" />
         <Alert variant="error">This account is not a super admin.</Alert>
       </div>
     );
@@ -80,7 +81,12 @@ export default function AdminPage() {
           <StatCard
             title="Sales this month"
             value={formatCurrency(report.sales.monthRevenue, 'KES')}
-            subtitle={`${report.sales.monthCount} sales · ${formatCurrency(report.sales.monthProfit, 'KES')} profit`}
+            subtitle={(
+              <>
+                {report.sales.monthCount} sales ·{' '}
+                <ProfitAmount amount={report.sales.monthProfit} currency="KES" label />
+              </>
+            )}
           />
         </Link>
       </div>
@@ -142,7 +148,7 @@ export default function AdminPage() {
             },
             { header: 'Sales', align: 'end', cell: (business) => business.sales },
             { header: 'Revenue', align: 'end', value: (business) => business.revenue, cell: (business) => formatCurrency(business.revenue, 'KES') },
-            { header: 'Profit', align: 'end', value: (business) => business.profit, cell: (business) => formatCurrency(business.profit, 'KES') },
+            { header: 'Profit', align: 'end', value: (business) => business.profit, cell: (business) => <ProfitAmount amount={business.profit} currency="KES" /> },
           ]}
         />
       </section>

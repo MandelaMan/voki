@@ -19,18 +19,18 @@ export default function CustomersPage() {
 
   return (
     <div className="page-stack">
-      <PageHeader title="Customers" subtitle="People saved from your sales" />
+      <PageHeader title="Customers" />
       {!isPremium ? (
         <PremiumNotice
           title="Customer book is on Premium"
-          description="Add a name and phone when you record a sale, then see who comes back and what they have spent."
+          description="See who comes back and what they have spent."
         />
       ) : isLoading ? (
         <Skeleton className="h-40 rounded-2xl" />
       ) : !customers?.length ? (
         <EmptyState
           title="No customers yet"
-          description="Add a name or phone the next time you record a sale."
+          description="Add a name or phone when you record a sale."
         />
       ) : (
         <div className="space-y-2">

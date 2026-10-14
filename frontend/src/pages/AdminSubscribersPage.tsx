@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AdminField, AdminFilterBar, AdminSearch, AdminStatus, AdminTable } from '../components/admin/AdminTable';
 import { adminApi } from '../api';
 import { Alert } from '../components/ui/Alert';
+import { FormFields } from '../components/ui/Form';
 import { Button } from '../components/ui/Button';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Skeleton } from '../components/ui/Badge';
@@ -69,7 +70,7 @@ export default function AdminSubscribersPage() {
   if (!isAdmin) {
     return (
       <div className="page-stack">
-        <PageHeader title="Subscribers" />
+        <PageHeader title="Subscribers" subtitle="Accounts and how to reach them" />
         <Alert variant="error">This account is not a super admin.</Alert>
       </div>
     );
@@ -80,13 +81,14 @@ export default function AdminSubscribersPage() {
 
   return (
     <div className="page-stack">
-      <PageHeader title="Subscribers" subtitle="Onboarded accounts and how to reach them" />
+      <PageHeader title="Subscribers" subtitle="Accounts and how to reach them" />
       {error && <Alert variant="error">{error}</Alert>}
       {note && !error && <Alert variant="success">{note}</Alert>}
       {overview.isLoading && <Skeleton className="h-24 rounded-2xl" />}
       {overview.data && (
         <AdminTable
           toolbar={(
+            <FormFields busy={setPlan.isPending || setStatus.isPending}>
             <AdminFilterBar>
               <AdminField label="Search">
                 <AdminSearch
@@ -103,6 +105,7 @@ export default function AdminSubscribersPage() {
                 />
               </AdminField>
             </AdminFilterBar>
+            </FormFields>
           )}
           rows={overview.data.users}
           rowKey={(account) => account.id}

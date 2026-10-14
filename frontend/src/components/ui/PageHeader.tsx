@@ -40,7 +40,7 @@ export function FormSection({
 }) {
   return (
     <div className={cn('surface-card p-4 space-y-4', className)}>
-      {title && <h3 className="text-label text-slate-700 dark:text-slate-300">{title}</h3>}
+      {title && <h3 className="text-label text-primary-700 dark:text-slate-300">{title}</h3>}
       <div className="space-y-4">{children}</div>
     </div>
   );
@@ -68,7 +68,7 @@ export function FilterTabs<T extends string>({
             'shrink-0 px-3 py-1.5 rounded-full text-caption font-semibold transition-all',
             value === opt.value
               ? 'bg-primary-600 text-white shadow-primary [&_svg]:text-white'
-              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 surface-card !shadow-none border border-slate-100 dark:border-slate-800'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
           )}
           style={value === opt.value ? { boxShadow: 'var(--shadow-primary)' } : undefined}
         >
@@ -182,8 +182,8 @@ export function ListRow({
         </div>
       ) : null}
       <div className="flex-1 min-w-0">
-        <p className="text-body-medium text-slate-900 dark:text-slate-100 truncate">{title}</p>
-        {subtitle && <p className="text-caption text-slate-500 mt-0.5 truncate">{subtitle}</p>}
+        <p className="text-body-medium font-semibold text-slate-900 dark:text-slate-100 truncate">{title}</p>
+        {subtitle && <p className="text-caption text-slate-500 dark:text-slate-400 mt-0.5 truncate">{subtitle}</p>}
       </div>
       {badge}
       {trailing && <div className="shrink-0 text-right">{trailing}</div>}

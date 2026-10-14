@@ -48,7 +48,7 @@ export default function MorePage() {
 
   return (
     <div className="page-stack">
-      <PageHeader title="More" subtitle={user?.role === 'SUPER_ADMIN' ? 'Subscriber support' : 'Settings and account'} />
+      <PageHeader title="More" />
 
       <Card className="flex items-center gap-4 !p-4">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white text-body-medium font-bold">
@@ -69,9 +69,9 @@ export default function MorePage() {
                 <div className="w-9 h-9 rounded-xl bg-primary-50 dark:bg-primary-900/25 text-primary-600 flex items-center justify-center">
                   <Icon size={18} />
                 </div>
-                <span className="text-body-medium font-medium">{label}</span>
+                <span className="text-body-medium font-semibold text-slate-800 dark:text-slate-100">{label}</span>
               </div>
-              <ChevronRight size={18} className="text-slate-400" />
+              <ChevronRight size={18} className="text-slate-400 dark:text-slate-500" />
             </Card>
           </Link>
         ))}
@@ -84,10 +84,10 @@ export default function MorePage() {
           aria-pressed={isDark}
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-primary-50 text-primary-700 dark:bg-slate-800 dark:text-slate-200 flex items-center justify-center shrink-0">
               {isDark ? <Moon size={18} /> : <Sun size={18} />}
             </div>
-            <span className="text-body-medium font-medium">{isDark ? 'Dark mode' : 'Light mode'}</span>
+            <span className="text-body-medium font-semibold text-slate-800 dark:text-slate-100">{isDark ? 'Dark mode' : 'Light mode'}</span>
           </div>
           <div className={`w-11 h-6 rounded-full transition-colors shrink-0 ${isDark ? 'bg-primary-600' : 'bg-slate-300'}`}>
             <div className={`w-5 h-5 rounded-full bg-white shadow transform transition-transform m-0.5 ${isDark ? 'translate-x-5' : ''}`} />

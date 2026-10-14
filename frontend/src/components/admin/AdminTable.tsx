@@ -41,7 +41,7 @@ function compareValues(a: string | number, b: string | number) {
 
 const PAGE_SIZE = 12;
 
-const fieldClass = 'h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-primary-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100';
+const fieldClass = 'h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-primary-300 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100';
 
 export function AdminFilterBar({ children }: { children: ReactNode }) {
   return <div className="flex flex-wrap items-end gap-3">{children}</div>;

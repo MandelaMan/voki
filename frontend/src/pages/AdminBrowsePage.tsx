@@ -125,7 +125,7 @@ export function AdminStockPage() {
             )}
             rows={stock.data}
             rowKey={(item) => item.id}
-            empty="No products match."
+            empty="No products match that search."
             columns={[
               { header: 'Product', cell: (item) => item.name },
               { header: 'SKU', cell: (item) => item.sku },
@@ -164,7 +164,7 @@ export function AdminSalesPage() {
             )}
             rows={sales.data}
             rowKey={(sale) => sale.id}
-            empty="No sales match."
+            empty="No sales match that search."
             columns={[
               { header: 'When', value: (sale) => new Date(sale.saleDate).getTime(), cell: (sale) => formatRelative(sale.saleDate) },
               { header: 'Shop', cell: (sale) => sale.businessName },
@@ -207,7 +207,7 @@ export function AdminPurchasesPage() {
             )}
             rows={purchases.data}
             rowKey={(purchase) => purchase.id}
-            empty="No purchases match."
+            empty="No purchases match that search."
             columns={[
               { header: 'When', value: (purchase) => new Date(purchase.purchaseDate).getTime(), cell: (purchase) => formatRelative(purchase.purchaseDate) },
               { header: 'Shop', cell: (purchase) => purchase.businessName },
@@ -231,7 +231,7 @@ export function AdminRecordsPage({
 }: {
   kind: 'categories' | 'suppliers' | 'customers';
   title: string;
-  subtitle: string;
+  subtitle?: string;
   placeholder: string;
 }) {
   const { search, setSearch, debounced } = useSearch();

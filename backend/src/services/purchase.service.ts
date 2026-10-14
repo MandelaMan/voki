@@ -1,6 +1,7 @@
 import { dbTransaction, prisma } from '../utils/prisma';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { activityRepository, getStockStatus } from '../repositories/activity.repository';
+import { wholeAmount } from '../utils/money';
 
 export const purchaseService = {
   async list(query: {
@@ -61,13 +62,14 @@ export const purchaseService = {
     receiptPath?: string;
     invoicePath?: string;
   }) {
-    const totalCost = data.items.reduce((sum, item) => sum + item.quantity * item.unitCost, 0);
+    const items = data.items.map((item) => ({ ...item, unitCost: wholeAmount(item.unitCost) }));
+    const totalCost = items.reduce((sum, item) => sum + item.quantity * item.unitCost, 0);
 
     return prisma.$transaction(async (tx) => {
       const business = await tx.business.findUnique({ where: { id: data.businessId } });
       const threshold = business?.lowStockThreshold ?? 5;
 
-      for (const item of data.items) {
+      for (const item of items) {
         if (!item.productId) continue;
         const product = await tx.product.findFirst({
           where: { id: item.productId, businessId: data.businessId, deletedAt: null },
@@ -103,7 +105,7 @@ export const purchaseService = {
           notes: data.notes,
           totalCost,
           items: {
-            create: data.items.map((item) => ({
+            create: items.map((item) => ({
               name: item.name,
               quantity: item.quantity,
               unitCost: item.unitCost,

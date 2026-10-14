@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { dbTransaction, prisma } from '../utils/prisma';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateSku } from '../utils/sku';
+import { wholeAmount } from '../utils/money';
 import { getStockStatus } from '../repositories/activity.repository';
 import { activityRepository } from '../repositories/activity.repository';
 
@@ -265,8 +266,8 @@ export const productService = {
         barcode: data.barcode,
         brand: data.brand,
         description: data.description,
-        buyingPrice: data.buyingPrice,
-        sellingPrice: data.sellingPrice,
+        buyingPrice: wholeAmount(data.buyingPrice),
+        sellingPrice: wholeAmount(data.sellingPrice),
         quantityPurchased: totalQty,
         remainingQuantity: totalQty,
         hasVariants: !!hasVariants,
@@ -278,8 +279,8 @@ export const productService = {
                 variantValue: v.variantValue,
                 sku: generateSku('VAR'),
                 barcode: v.barcode,
-                buyingPrice: v.buyingPrice,
-                sellingPrice: v.sellingPrice,
+                buyingPrice: wholeAmount(v.buyingPrice),
+                sellingPrice: wholeAmount(v.sellingPrice),
                 quantityPurchased: v.quantity,
                 remainingQuantity: v.quantity,
                 status: getStockStatus(v.quantity, business?.lowStockThreshold ?? 5),
@@ -336,8 +337,8 @@ export const productService = {
         ...(data.brand !== undefined && { brand: data.brand }),
         ...(data.description !== undefined && { description: data.description }),
         ...(data.barcode !== undefined && { barcode: data.barcode }),
-        ...(data.buyingPrice !== undefined && { buyingPrice: data.buyingPrice }),
-        ...(data.sellingPrice !== undefined && { sellingPrice: data.sellingPrice }),
+        ...(data.buyingPrice !== undefined && { buyingPrice: wholeAmount(data.buyingPrice) }),
+        ...(data.sellingPrice !== undefined && { sellingPrice: wholeAmount(data.sellingPrice) }),
         ...(data.categoryId !== undefined && { categoryId }),
         ...(data.supplierId !== undefined && { supplierId }),
       },
@@ -408,7 +409,7 @@ export const productService = {
   }) {
     const activeItems = data.items.filter((item) => item.quantity > 0);
     if (!activeItems.length) {
-      throw new ValidationError('Add at least one item with quantity greater than 0');
+      throw new ValidationError('Add at least one item with a quantity greater than 0.');
     }
 
     const existing = await prisma.product.findFirst({
@@ -425,7 +426,7 @@ export const productService = {
       const supplier = await prisma.supplier.findFirst({
         where: { id: data.supplierId, businessId: data.businessId, deletedAt: null },
       });
-      if (!supplier) throw new ValidationError('Choose a supplier from this business, or add a new one');
+      if (!supplier) throw new ValidationError('Choose a supplier from this business, or add a new one.');
       supplierId = supplier.id;
     }
 
@@ -446,12 +447,12 @@ export const productService = {
       for (const item of activeItems) {
         if (product.hasVariants) {
           if (!item.variantId) {
-            throw new ValidationError('Select a variant (size, color, etc.) for each restock item');
+            throw new ValidationError('Select a variant, such as a size or color, for each restock item.');
           }
           const variant = product.variants.find((v) => v.id === item.variantId);
           if (!variant) throw new NotFoundError('Variant not found');
 
-          const unitCost = item.unitCost ?? Number(variant.buyingPrice);
+          const unitCost = wholeAmount(item.unitCost ?? Number(variant.buyingPrice));
           const newRemaining = variant.remainingQuantity + item.quantity;
 
           await tx.productVariant.update({
@@ -459,8 +460,8 @@ export const productService = {
             data: {
               quantityPurchased: variant.quantityPurchased + item.quantity,
               remainingQuantity: newRemaining,
-              ...(item.unitCost !== undefined && { buyingPrice: item.unitCost }),
-              ...(item.sellingPrice !== undefined && { sellingPrice: item.sellingPrice }),
+              ...(item.unitCost !== undefined && { buyingPrice: wholeAmount(item.unitCost) }),
+              ...(item.sellingPrice !== undefined && { sellingPrice: wholeAmount(item.sellingPrice) }),
               status: getStockStatus(newRemaining, threshold),
             },
           });
@@ -473,10 +474,10 @@ export const productService = {
           });
         } else {
           if (item.variantId) {
-            throw new ValidationError('This product does not have variants');
+            throw new ValidationError('This product does not have variants.');
           }
 
-          const unitCost = item.unitCost ?? Number(product.buyingPrice);
+          const unitCost = wholeAmount(item.unitCost ?? Number(product.buyingPrice));
           const newRemaining = product.remainingQuantity + item.quantity;
 
           await tx.product.update({
@@ -484,8 +485,8 @@ export const productService = {
             data: {
               quantityPurchased: product.quantityPurchased + item.quantity,
               remainingQuantity: newRemaining,
-              ...(item.unitCost !== undefined && { buyingPrice: item.unitCost }),
-              ...(item.sellingPrice !== undefined && { sellingPrice: item.sellingPrice }),
+              ...(item.unitCost !== undefined && { buyingPrice: wholeAmount(item.unitCost) }),
+              ...(item.sellingPrice !== undefined && { sellingPrice: wholeAmount(item.sellingPrice) }),
               status: getStockStatus(newRemaining, threshold),
             },
           });

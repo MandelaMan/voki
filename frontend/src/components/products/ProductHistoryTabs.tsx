@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatCurrency, formatDate, cn } from '../../lib/utils';
+import { ProfitAmount, profitTone } from '../ui/ProfitAmount';
 import type { Product } from '../../types';
 
 type Tab = 'sold' | 'restock';
@@ -256,11 +257,10 @@ function TabButton({
 }
 
 function Result({ amount, currency }: { amount: number; currency: string }) {
-  const tone = amount > 0 ? 'text-emerald-600' : amount < 0 ? 'text-red-500' : 'text-slate-500';
   const word = amount > 0 ? 'Profit' : amount < 0 ? 'Loss' : 'Even';
   return (
-    <span className={tone}>
-      <span className="block font-semibold tabular-nums">{money(Math.abs(amount), currency)}</span>
+    <span className={profitTone(amount)}>
+      <ProfitAmount amount={amount} currency={currency} className="block font-semibold" />
       <span className="block text-[10px]">{word}</span>
     </span>
   );

@@ -8,12 +8,14 @@ import { Card } from '../components/ui/Card';
 import { Select } from '../components/ui/Select';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Alert } from '../components/ui/Alert';
+import { FormFields } from '../components/ui/Form';
 import { ProductSearchBox } from '../components/products/ProductSearchBox';
-import { formatCurrency, getApiErrorMessage, getFirstInStockVariant, isProductOutOfStock } from '../lib/utils';
+import { formatCurrency, getApiErrorMessage, getFirstInStockVariant, getImageUrl, isProductOutOfStock } from '../lib/utils';
 import { productApi, saleApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
 import { useBusinessStore, usePremium } from '../stores';
 import { offlineQueue } from '../lib/offline';
+import { businessPaymentMethods, PAYMENT_METHOD_OPTIONS, type PaymentMethod } from '../lib/payments';
 import { useOnlineStatus } from '../hooks/useOfflineSync';
 import type { Product, ProductVariant } from '../types';
 
@@ -23,6 +25,13 @@ interface CartItem {
   quantity: number;
   catalogPrice: number;
   sellingPrice: number;
+}
+
+function cartImage(product: Product) {
+  const image = [...(product.images || [])].sort(
+    (a, b) => Number(b.isPrimary) - Number(a.isPrimary) || (a.order ?? 0) - (b.order ?? 0)
+  )[0];
+  return getImageUrl(image?.path);
 }
 
 function getItemStock(product: Product, variant?: ProductVariant) {
@@ -45,6 +54,7 @@ export default function NewSalePage() {
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState('CASH');
+  const paymentMethods = businessPaymentMethods(activeBusiness?.paymentMethods);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [promptMpesa, setPromptMpesa] = useState(true);
@@ -55,6 +65,12 @@ export default function NewSalePage() {
     queryFn: () => productApi.get(searchParams.get('productId')!, activeBusiness!.id),
     enabled: !!searchParams.get('productId') && !!activeBusiness?.id,
   });
+
+  useEffect(() => {
+    if (!paymentMethods.includes(paymentMethod as PaymentMethod)) {
+      setPaymentMethod(paymentMethods[0] || 'CASH');
+    }
+  }, [paymentMethod, paymentMethods]);
 
   useEffect(() => {
     if (!preselectedProduct || cart.length > 0) return;
@@ -94,7 +110,7 @@ export default function NewSalePage() {
       return;
     }
 
-    const catalogPrice = Number(variant?.sellingPrice || product.sellingPrice);
+    const catalogPrice = Math.round(Number(variant?.sellingPrice || product.sellingPrice) || 0);
     const existing = cart.find(
       (c) => c.product.id === product.id && c.variant?.id === variant?.id
     );
@@ -138,7 +154,7 @@ export default function NewSalePage() {
 
   const updateSoldPrice = (index: number, value: number) => {
     setCart(cart.map((item, i) =>
-      i === index ? { ...item, sellingPrice: Math.max(0, value) } : item
+      i === index ? { ...item, sellingPrice: Math.max(0, Math.round(value) || 0) } : item
     ));
   };
 
@@ -161,7 +177,7 @@ export default function NewSalePage() {
           productId: item.product.id,
           ...(item.variant?.id ? { variantId: item.variant.id } : {}),
           quantity: item.quantity,
-          sellingPrice: Math.round(item.sellingPrice * 100) / 100,
+          sellingPrice: Math.round(item.sellingPrice),
         })),
       };
 
@@ -194,7 +210,7 @@ export default function NewSalePage() {
       navigate(!offline && productIds.length === 1 ? `/inventory/${productIds[0]}` : '/sales');
     },
     onError: (error) => {
-      setStockError(getApiErrorMessage(error, 'Could not complete sale.'));
+      setStockError(getApiErrorMessage(error, 'Could not complete the sale.'));
     },
   });
 
@@ -202,12 +218,13 @@ export default function NewSalePage() {
 
   return (
     <div className="page-stack">
-      <PageHeader title="Record Sale" subtitle="Search and add products to cart" />
+      <PageHeader title="Record Sale" />
 
       {stockError && (
         <Alert variant="error">{stockError}</Alert>
       )}
 
+      <FormFields busy={mutation.isPending}>
       <ProductSearchBox
         businessId={activeBusiness?.id}
         value={search}
@@ -222,8 +239,10 @@ export default function NewSalePage() {
           addToCart(product, variant);
         }}
       />
+      </FormFields>
 
       {cart.length > 0 && (
+        <FormFields busy={mutation.isPending}>
         <Card>
           <h3 className="text-heading mb-3">Cart ({cart.length})</h3>
           <div className="space-y-4">
@@ -231,11 +250,20 @@ export default function NewSalePage() {
               const lineDiscount = (item.catalogPrice - item.sellingPrice) * item.quantity;
               const hasDiscount = item.sellingPrice < item.catalogPrice;
               const stock = getItemStock(item.product, item.variant);
+              const imageUrl = cartImage(item.product);
 
               return (
                 <div key={index} className="space-y-2 pb-4 border-b border-slate-100 dark:border-slate-800 last:border-0 last:pb-0">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-1 gap-3">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
+                        {imageUrl ? (
+                          <img src={imageUrl} alt="" className="h-full w-full object-contain" />
+                        ) : (
+                          <span className="text-sm font-semibold text-slate-400">{item.product.name.slice(0, 1).toUpperCase()}</span>
+                        )}
+                      </span>
+                      <div className="min-w-0 flex-1">
                       <p className="text-body-medium truncate">{item.product.name}</p>
                       {item.variant && (
                         <p className="text-caption text-slate-500">{item.variant.variantType}: {item.variant.variantValue}</p>
@@ -249,6 +277,7 @@ export default function NewSalePage() {
                           </span>
                         )}
                       </p>
+                      </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button type="button" onClick={() => updateQuantity(index, -1)} className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800">
@@ -268,7 +297,7 @@ export default function NewSalePage() {
                   <Input
                     label="Sold at (per unit)"
                     type="number"
-                    step="0.01"
+                    step={1}
                     min="0"
                     value={item.sellingPrice}
                     onChange={(e) => updateSoldPrice(index, parseFloat(e.target.value) || 0)}
@@ -284,13 +313,7 @@ export default function NewSalePage() {
           <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
             <Select
               label="Payment Method"
-              options={[
-                { value: 'CASH', label: 'Cash' },
-                { value: 'CARD', label: 'Card' },
-                { value: 'MPESA', label: 'M-Pesa' },
-                { value: 'BANK_TRANSFER', label: 'Bank Transfer' },
-                { value: 'OTHER', label: 'Other' },
-              ]}
+              options={PAYMENT_METHOD_OPTIONS.filter((option) => paymentMethods.includes(option.value))}
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
             />
@@ -324,9 +347,7 @@ export default function NewSalePage() {
             )}
             {!isPremium && paymentMethod === 'MPESA' && (
               <p className="text-caption text-slate-500">
-                The sale is recorded as M-Pesa.{' '}
-                <Link to="/plan" className="font-medium text-primary-600">Premium</Link>
-                {' '}can also send the payment prompt to their phone.
+                <Link to="/plan" className="font-medium text-primary-600">Premium</Link> sends the M-Pesa prompt.
               </p>
             )}
           </div>
@@ -367,10 +388,11 @@ export default function NewSalePage() {
             {!isOnline ? 'Save Offline' : 'Complete Sale'}
           </Button>
         </Card>
+        </FormFields>
       )}
 
       {cart.length === 0 && (
-        <p className="text-center text-caption text-slate-500 py-8">Search and add products to record a sale</p>
+        <p className="text-center text-caption text-slate-500 py-8">Cart is empty</p>
       )}
     </div>
   );

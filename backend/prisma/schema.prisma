@@ -53,6 +53,7 @@ model Business {
   description       String?       @db.Text
   logo              String?
   currency            String            @default("KES")
+  paymentMethods      String            @default("CASH,CARD,MPESA,BANK_TRANSFER,OTHER") @db.VarChar(80)
   lowStockThreshold   Int               @default(5)
   mpesaType           MpesaAccountType?
   mpesaShortCode      String?
@@ -230,6 +231,16 @@ model ProductImage {
 
   @@index([productId])
   @@map("product_images")
+}
+
+/// Photo and receipt bytes. Render's disk is wiped on deploy, so the path alone is not enough.
+model StoredFile {
+  path      String   @id
+  mimeType  String
+  data      Bytes    @db.LongBlob
+  createdAt DateTime @default(now())
+
+  @@map("stored_files")
 }
 
 model Sale {

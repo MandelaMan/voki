@@ -20,7 +20,7 @@ export default function AdminIssuesPage() {
   if (!isAdmin) {
     return (
       <div className="page-stack">
-        <PageHeader title="Issues" />
+        <PageHeader title="Issues" subtitle="Stock, payments, and accounts that need a look" />
         <Alert variant="error">This account is not a super admin.</Alert>
       </div>
     );

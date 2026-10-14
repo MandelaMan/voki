@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ShoppingCart, Trash2, PackagePlus, Pencil } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { FormFields } from '../components/ui/Form';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { StockBadge } from '../components/ui/Badge';
@@ -16,6 +17,7 @@ import {
   type ImagePreview,
 } from '../components/ui/ImageUploadPreview';
 import { formatCurrency, getApiErrorMessage, isProductOutOfStock } from '../lib/utils';
+import { ProfitAmount } from '../components/ui/ProfitAmount';
 import { BackgroundRemovalOption } from '../components/billing/PremiumNotice';
 import { productApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
@@ -102,7 +104,7 @@ export default function ProductDetailPage() {
     { label: 'In stock', value: `${product.remainingQuantity}` },
     { label: 'Sold', value: `${product.quantitySold}` },
     { label: 'Bought', value: `${product.quantityPurchased}` },
-    { label: 'Profit', value: formatCurrency(profit, currency), profit: true },
+    { label: profit < 0 ? 'Loss' : 'Profit', value: '', profit: true },
   ];
 
   return (
@@ -116,18 +118,20 @@ export default function ProductDetailPage() {
       <div className="grid grid-cols-1 sm:grid-cols-[16rem_minmax(0,1fr)] lg:grid-cols-[18rem_minmax(0,1fr)] gap-4 items-start">
         <div className="min-w-0 space-y-2">
           <ImageGallery images={product.images} alt={product.name} compact />
-          <ImageUploadPreview
-            compact
-            previews={pendingPreviews}
-            onAdd={handleAddPending}
-            onRemove={handleRemovePending}
-          />
-          <BackgroundRemovalOption checked={removeBackground} onChange={setRemoveBackground} />
-          {pendingPreviews.length > 0 && (
-            <Button className="w-full" size="sm" onClick={handleUploadPending} loading={uploading}>
-              Upload {pendingPreviews.length}
-            </Button>
-          )}
+          <FormFields busy={uploading} className="space-y-2">
+            <ImageUploadPreview
+              compact
+              previews={pendingPreviews}
+              onAdd={handleAddPending}
+              onRemove={handleRemovePending}
+            />
+            <BackgroundRemovalOption checked={removeBackground} onChange={setRemoveBackground} />
+            {pendingPreviews.length > 0 && (
+              <Button className="w-full" size="sm" onClick={handleUploadPending} loading={uploading}>
+                Upload {pendingPreviews.length}
+              </Button>
+            )}
+          </FormFields>
         </div>
 
         <div className="min-w-0 space-y-3">
@@ -161,8 +165,8 @@ export default function ProductDetailPage() {
             {facts.map((fact) => (
               <div key={fact.label} className="rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 min-w-0">
                 <p className="text-[10px] uppercase tracking-wide text-slate-400 leading-none">{fact.label}</p>
-                <p className={`text-sm font-semibold tabular-nums mt-1 ${fact.accent ? 'text-primary-600' : fact.profit ? 'text-emerald-600' : ''}`}>
-                  {fact.value}
+                <p className={`text-sm font-semibold tabular-nums mt-1 ${fact.accent ? 'text-primary-600' : ''}`}>
+                  {fact.profit ? <ProfitAmount amount={profit} currency={currency} /> : fact.value}
                 </p>
               </div>
             ))}

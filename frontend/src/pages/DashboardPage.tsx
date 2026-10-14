@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
-  TrendingUp, Package, AlertTriangle,
+  TrendingUp, TrendingDown, Package, AlertTriangle,
   ArrowRight, ShoppingBag, Plus, BarChart3, Truck,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
-import { Card, CurrencyMark, HeroCard, StatCard, QuickAction } from '../components/ui/Card';
+import { Card, StatCard, QuickAction } from '../components/ui/Card';
+import { TodayRevenueCard } from '../components/dashboard/TodayRevenueCard';
+import { ProfitAmount } from '../components/ui/ProfitAmount';
 import { Skeleton } from '../components/ui/Badge';
 import { FilterTabs, PageHeader } from '../components/ui/PageHeader';
 import { formatCurrency, formatRelative } from '../lib/utils';
@@ -56,24 +58,22 @@ export default function DashboardPage() {
 
   return (
     <div className="page-stack">
-      <PageHeader
-        title="Dashboard"
-        subtitle="Here's your business overview"
-      />
+      <PageHeader title="Dashboard" />
 
-      <HeroCard
-        title="Today's Revenue"
-        value={formatCurrency(stats?.todaySales.revenue || 0, currency)}
-        subtitle={`${stats?.todaySales.count || 0} sales · ${formatCurrency(stats?.todaySales.profit || 0, currency)} profit`}
-        icon={<CurrencyMark currency={currency} />}
+      <TodayRevenueCard
+        revenue={stats?.todaySales.revenue || 0}
+        count={stats?.todaySales.count || 0}
+        profit={stats?.todaySales.profit || 0}
+        currency={currency}
+        collections={stats?.todaySales.collections}
       />
 
       <div>
         <h3 className="text-heading text-slate-800 dark:text-slate-200 mb-3">Quick Actions</h3>
         <div className="grid grid-cols-1 min-[420px]:grid-cols-2 xl:grid-cols-4 gap-2.5">
           <QuickAction to="/sales/new" icon={<ShoppingBag size={20} />} label="Record Sale" primary />
-          <QuickAction to="/inventory/new" icon={<Plus size={20} />} label="Add Product" hint="Create the item. No stock yet." />
-          <QuickAction to="/purchases/new" icon={<Truck size={20} />} label="Record Purchase" hint="Add the units you bought." />
+          <QuickAction to="/inventory/new" icon={<Plus size={20} />} label="Add Product" hint="No stock yet" />
+          <QuickAction to="/purchases/new" icon={<Truck size={20} />} label="Record Purchase" hint="Adds stock" />
           <QuickAction to="/reports" icon={<BarChart3 size={20} />} label="Reports" />
         </div>
       </div>
@@ -93,10 +93,13 @@ export default function DashboardPage() {
           trend={(stats?.stockAlerts.outOfStock || 0) > 0 ? 'down' : undefined}
         />
         <StatCard
-          title={profitRange === 'month' ? "This Month's Profit" : "Today's Profit"}
-          value={formatCurrency(selectedProfit, currency)}
-          icon={<TrendingUp size={16} />}
-          trend="up"
+          title={
+            selectedProfit < 0
+              ? (profitRange === 'month' ? "This Month's Loss" : "Today's Loss")
+              : (profitRange === 'month' ? "This Month's Profit" : "Today's Profit")
+          }
+          value={<ProfitAmount amount={selectedProfit} currency={currency} />}
+          icon={selectedProfit < 0 ? <TrendingDown size={16} /> : <TrendingUp size={16} />}
         />
         <StatCard
           title="Sales Count"
@@ -181,9 +184,11 @@ export default function DashboardPage() {
                   <p className="font-semibold text-sm truncate">{product?.name}</p>
                   <p className="text-xs text-slate-500">{product?.totalSold} sold</p>
                 </div>
-                <p className="text-caption font-semibold text-emerald-600 shrink-0">
-                  {formatCurrency(product?.totalProfit || 0, currency)}
-                </p>
+                <ProfitAmount
+                  amount={product?.totalProfit || 0}
+                  currency={currency}
+                  className="text-caption font-semibold shrink-0"
+                />
               </Card>
             ))}
           </div>

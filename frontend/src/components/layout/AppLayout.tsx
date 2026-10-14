@@ -216,8 +216,8 @@ export function BottomNav() {
                 className={cn(
                   'w-8 h-8 rounded-xl flex items-center justify-center',
                   active
-                    ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/40'
-                    : 'text-slate-400'
+                    ? 'bg-primary-600 text-white dark:bg-primary-600'
+                    : 'text-slate-500 dark:text-slate-400'
                 )}
               >
                 <Icon size={18} />
@@ -225,7 +225,7 @@ export function BottomNav() {
               <span
                 className={cn(
                   'text-[10px] leading-none truncate max-w-full',
-                  active ? 'text-primary-600 font-semibold' : 'text-slate-400 font-medium'
+                  active ? 'text-primary-700 font-semibold dark:text-primary-300' : 'text-slate-500 font-medium dark:text-slate-400'
                 )}
               >
                 {label}
@@ -255,7 +255,7 @@ function Sidebar() {
 
       <NavLink
         to={user?.role === 'SUPER_ADMIN' ? '/admin/subscribers' : '/search'}
-        className="flex items-center gap-2 h-10 px-3 mb-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-sm text-slate-400"
+        className="flex items-center gap-2 h-10 px-3 mb-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-sm font-medium text-slate-500 dark:text-slate-400"
       >
         <Search size={16} />
         Search
@@ -273,16 +273,16 @@ function Sidebar() {
                 className={cn(
                   'flex flex-col items-center gap-1.5 rounded-2xl border px-1.5 py-3 text-center transition-colors',
                   active
-                    ? 'border-primary-300 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:border-primary-700 dark:text-primary-200'
-                    : 'border-slate-200/80 dark:border-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ? 'border-primary-400 bg-primary-600 text-white dark:bg-primary-900/30 dark:border-primary-700 dark:text-primary-200'
+                    : 'border-slate-200/80 bg-slate-50 text-slate-700 hover:bg-primary-50 dark:border-slate-800 dark:bg-transparent dark:text-slate-400 dark:hover:bg-slate-800'
                 )}
               >
                 <span
                   className={cn(
                     'w-10 h-10 rounded-xl border flex items-center justify-center',
                     active
-                      ? 'border-primary-300 bg-white text-primary-600 dark:bg-slate-900'
-                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900'
+                      ? 'border-primary-300 bg-white text-primary-700 dark:border-primary-700 dark:bg-slate-900 dark:text-primary-300'
+                      : 'border-slate-200 bg-white text-primary-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
                   )}
                 >
                   <Icon size={18} />
@@ -296,14 +296,14 @@ function Sidebar() {
 
       <NavLink
         to="/profile"
-        className="mt-3 flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 p-2.5 min-w-0"
+        className="mt-3 flex items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-transparent p-2.5 min-w-0"
       >
-        <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-full bg-primary-100 dark:bg-slate-800 text-primary-800 dark:text-slate-200 text-xs font-semibold flex items-center justify-center shrink-0">
           {(user?.firstName?.[0] || 'V')}{(user?.lastName?.[0] || '')}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{name}</p>
-          <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{user?.email}</p>
         </div>
         <ChevronDown size={14} className="text-slate-400 shrink-0" />
       </NavLink>
@@ -449,11 +449,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   return (
-    <div className="app-shell min-h-svh bg-[#eef3f9] dark:bg-slate-950 lg:flex lg:h-dvh lg:overflow-hidden">
+    <div className="app-shell min-h-svh bg-[#e7eefb] dark:bg-slate-950 lg:flex lg:h-dvh lg:overflow-hidden">
       <Sidebar />
 
       <div className="flex w-full min-w-0 flex-1 flex-col max-lg:min-h-0 lg:h-dvh lg:overflow-hidden">
-        <header className="safe-top relative z-30 shrink-0 bg-[#eef3f9] dark:bg-slate-950 print:hidden">
+        <header className="safe-top relative z-30 shrink-0 bg-[#e7eefb] dark:bg-slate-950 print:hidden">
           <div className="flex items-center gap-2 px-3 sm:px-4 lg:px-6 h-14">
             <button
               onClick={() => navigate(isSuperAdmin ? '/admin/subscribers' : '/businesses')}
@@ -467,16 +467,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </button>
 
             <p className="hidden lg:flex items-center gap-2 text-sm min-w-0 flex-1">
-              <span className="text-slate-400">Home</span>
-              <span className="text-slate-300">/</span>
-              <span className="font-medium text-slate-800 dark:text-slate-100 truncate">{section}</span>
+              <span className="font-medium text-slate-500 dark:text-slate-400">Home</span>
+              <span className="text-slate-300 dark:text-slate-600">/</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-100 truncate">{section}</span>
             </p>
 
             <div className="flex items-center gap-1 shrink-0">
               {!isSuperAdmin && (
                 <button
                   onClick={() => navigate('/businesses')}
-                  className="hidden lg:flex items-center gap-1.5 max-w-[180px] mr-1 px-2.5 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-700 dark:text-slate-200"
+                  className="hidden lg:flex items-center gap-1.5 max-w-[180px] mr-1 px-2.5 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-800 dark:text-slate-200"
                 >
                   <span className="truncate">{activeBusiness?.name || 'Business'}</span>
                   <ChevronDown size={14} className="text-slate-400 shrink-0" />
@@ -485,14 +485,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <StatusCluster isOnline={isOnline} pendingSync={pendingSync} />
               <button
                 onClick={() => navigate(isSuperAdmin ? '/admin/subscribers' : '/search')}
-                className="p-2 rounded-xl text-slate-500 hover:bg-white dark:hover:bg-slate-800 lg:hidden"
+                className="p-2 rounded-xl text-slate-600 hover:bg-white dark:text-slate-400 dark:hover:bg-slate-800 lg:hidden"
                 aria-label="Search"
               >
                 <Search size={18} />
               </button>
               <button
                 onClick={() => navigate(isSuperAdmin ? '/admin/issues' : '/notifications')}
-                className="p-2 rounded-xl text-slate-500 hover:bg-white dark:hover:bg-slate-800"
+                className="p-2 rounded-xl text-slate-600 hover:bg-white dark:text-slate-400 dark:hover:bg-slate-800"
                 aria-label="Notifications"
               >
                 <Bell size={18} />
@@ -502,7 +502,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={logout}
                 disabled={pending}
-                className="p-2 rounded-xl text-slate-500 hover:bg-white disabled:opacity-60 dark:hover:bg-slate-800"
+                className="p-2 rounded-xl text-slate-600 hover:bg-white disabled:opacity-60 dark:text-slate-400 dark:hover:bg-slate-800"
                 aria-label="Log out"
                 title="Log out"
               >
@@ -535,7 +535,7 @@ export function AuthLayout({
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center overflow-x-hidden px-4 py-10">
       <ThemeToggle className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-20 bg-white/90 dark:bg-slate-900/90" />
-      <div className="absolute inset-0 bg-gradient-to-b from-primary-50/80 via-[#eef3f9] to-[#eef3f9] dark:from-primary-950/30 dark:via-slate-950 dark:to-slate-950" />
+      <div className="absolute inset-0 bg-gradient-to-b from-primary-100/80 via-[#e7eefb] to-[#e7eefb] dark:from-primary-950/30 dark:via-slate-950 dark:to-slate-950" />
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary-200/30 dark:bg-primary-900/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
 
       <div className="w-full max-w-sm relative z-10">
@@ -547,13 +547,13 @@ export function AuthLayout({
             <VokiMark size={56} />
           </div>
           <h1 className="text-heading text-slate-900 dark:text-white">Voki</h1>
-          <p className="text-caption text-slate-500 mt-1">Inventory & Sales Management</p>
+          <p className="text-caption text-slate-500 mt-1 dark:text-slate-400">Inventory & Sales Management</p>
         </div>
         <div className="surface-card p-5 rounded-2xl">
           {(title || subtitle) && (
             <div className="mb-6">
               {title && <h2 className="text-display text-slate-900 dark:text-white">{title}</h2>}
-              {subtitle && <p className="text-caption text-slate-500 mt-1.5 leading-relaxed">{subtitle}</p>}
+              {subtitle && <p className="text-caption text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">{subtitle}</p>}
             </div>
           )}
           <PageTransition>{children}</PageTransition>

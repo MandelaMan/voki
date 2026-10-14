@@ -5,6 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Lock, Mail, User } from 'lucide-react';
 import { AuthPillField, AuthPrimaryButton, AuthScreen } from '../components/auth/AuthScreen';
+import { PasswordStrength } from '../components/auth/PasswordStrength';
+import { Form } from '../components/ui/Form';
+import { getApiErrorMessage } from '../lib/utils';
 import { useAuthStore } from '../stores';
 
 const schema = z.object({
@@ -21,24 +24,25 @@ export default function RegisterPage() {
   const registerUser = useAuthStore((s) => s.register);
   const [error, setError] = useState('');
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+  const password = watch('password') || '';
 
   const onSubmit = async (data: FormData) => {
     setError('');
     try {
       await registerUser(data);
       navigate('/onboarding');
-    } catch {
-      setError('Registration failed. Email may already be in use.');
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Registration failed. Please try again.'));
     }
   };
 
   return (
     <AuthScreen
       title="Create Account"
-      subtitle="Enter your details to get started"
+      subtitle="Track your stock and sales in one place"
       footer={
         <>
           Already have an account?{' '}
@@ -48,7 +52,7 @@ export default function RegisterPage() {
         </>
       }
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
+      <Form busy={isSubmitting} onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
         {error && (
           <p className="rounded-2xl bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300" role="alert">
             {error}
@@ -93,6 +97,7 @@ export default function RegisterPage() {
           error={errors.password?.message}
           {...register('password')}
         />
+        <PasswordStrength password={password} />
 
         <p className="px-2 text-center text-[12px] leading-snug text-neutral-500 dark:text-neutral-400">
           By creating an account, you agree to the{' '}
@@ -106,7 +111,7 @@ export default function RegisterPage() {
         </p>
 
         <AuthPrimaryButton loading={isSubmitting}>Create Account</AuthPrimaryButton>
-      </form>
+      </Form>
     </AuthScreen>
   );
 }

@@ -31,6 +31,12 @@ export const config = {
     periodDays: positiveNumber(process.env.PREMIUM_PERIOD_DAYS, 30),
   },
   removeBgApiKey: process.env.REMOVEBG_API_KEY || '',
+  superAdmin: {
+    email: process.env.SUPER_ADMIN_EMAIL || 'admin@voki.local',
+    password: process.env.SUPER_ADMIN_PASSWORD || 'VokiAdmin2026',
+    firstName: process.env.SUPER_ADMIN_FIRST_NAME || 'Voki',
+    lastName: process.env.SUPER_ADMIN_LAST_NAME || 'Admin',
+  },
 };
 
 function positiveNumber(value: string | undefined, fallback: number) {

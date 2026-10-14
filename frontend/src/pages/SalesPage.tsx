@@ -6,6 +6,8 @@ import { Button } from '../components/ui/Button';
 import { PageHeader, ListRow } from '../components/ui/PageHeader';
 import { Skeleton, EmptyState } from '../components/ui/Badge';
 import { cn, formatCurrency, formatRelative, getImageUrl } from '../lib/utils';
+import { businessPaymentMethods, PAYMENT_METHOD_OPTIONS } from '../lib/payments';
+import { ProfitAmount } from '../components/ui/ProfitAmount';
 import { saleApi } from '../api';
 import { useBusinessStore } from '../stores';
 import type { Sale } from '../types';
@@ -20,22 +22,9 @@ const DATE_FILTERS: Array<{ value: DatePreset; label: string }> = [
   { value: 'custom', label: 'Custom' },
 ];
 
-const PAYMENT_OPTIONS = [
-  { value: '', label: 'All payments' },
-  { value: 'CASH', label: 'Cash' },
-  { value: 'MPESA', label: 'M-Pesa' },
-  { value: 'CARD', label: 'Card' },
-  { value: 'BANK_TRANSFER', label: 'Bank transfer' },
-  { value: 'OTHER', label: 'Other' },
-];
-
-const PAYMENT_LABELS: Record<string, string> = {
-  CASH: 'Cash',
-  CARD: 'Card',
-  MPESA: 'M-Pesa',
-  BANK_TRANSFER: 'Bank transfer',
-  OTHER: 'Other',
-};
+const PAYMENT_LABELS: Record<string, string> = Object.fromEntries(
+  PAYMENT_METHOD_OPTIONS.map((option) => [option.value, option.label]),
+);
 
 function startOfDay(date: Date) {
   const next = new Date(date);
@@ -88,17 +77,23 @@ export default function SalesPage() {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search.trim());
   const range = useMemo(() => dateRange(preset, from, to), [preset, from, to]);
-  const filtersActive = preset !== 'all' || !!payment || !!search.trim();
+  const allowedPayments = businessPaymentMethods(activeBusiness?.paymentMethods);
+  const paymentOptions = [
+    { value: '', label: 'All payments' },
+    ...PAYMENT_METHOD_OPTIONS.filter((option) => allowedPayments.includes(option.value)),
+  ];
+  const paymentFilter = allowedPayments.includes(payment as typeof allowedPayments[number]) ? payment : '';
+  const filtersActive = preset !== 'all' || !!paymentFilter || !!search.trim();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['sales', activeBusiness?.id, range.startDate, range.endDate, payment, deferredSearch],
+    queryKey: ['sales', activeBusiness?.id, range.startDate, range.endDate, paymentFilter, deferredSearch],
     queryFn: () =>
       saleApi.list({
         businessId: activeBusiness!.id,
         limit: 50,
         startDate: range.startDate,
         endDate: range.endDate,
-        paymentMethod: payment || undefined,
+        paymentMethod: paymentFilter || undefined,
         search: deferredSearch || undefined,
       }),
     enabled: !!activeBusiness?.id,
@@ -189,11 +184,11 @@ export default function SalesPage() {
           <div className="relative shrink-0">
             <select
               aria-label="Payment method"
-              value={payment}
+              value={paymentFilter}
               onChange={(e) => setPayment(e.target.value)}
               className="h-9 appearance-none rounded-lg border border-slate-200 bg-slate-50 pl-2.5 pr-7 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
             >
-              {PAYMENT_OPTIONS.map((opt) => (
+              {paymentOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
@@ -207,11 +202,6 @@ export default function SalesPage() {
       ) : !data?.sales.length ? (
         <EmptyState
           title={filtersActive ? 'No matching sales' : 'No sales yet'}
-          description={
-            filtersActive
-              ? 'Try a different date, payment method, or item name'
-              : 'Record your first sale to start tracking revenue'
-          }
           action={filtersActive ? undefined : <Button to="/sales/new">Record Sale</Button>}
         />
       ) : (
@@ -227,9 +217,9 @@ export default function SalesPage() {
                   title={sale.items?.map((i) => i.product?.name).filter(Boolean).join(', ') || 'Sale'}
                   subtitle={`${formatRelative(sale.saleDate)} · ${sale.paymentStatus === 'PENDING' ? 'Waiting for M-Pesa' : (PAYMENT_LABELS[sale.paymentMethod] || sale.paymentMethod)}`}
                   trailing={
-                    <div>
+                    <div className="flex flex-col items-end gap-1">
                       <p className="text-body-medium font-bold text-primary-600">{formatCurrency(Number(sale.totalAmount), currency)}</p>
-                      <p className="text-caption text-emerald-600">+{formatCurrency(Number(sale.totalProfit), currency)}</p>
+                      <ProfitAmount amount={Number(sale.totalProfit)} currency={currency} badge />
                     </div>
                   }
                 />

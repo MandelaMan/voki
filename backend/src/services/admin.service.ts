@@ -5,11 +5,13 @@ import { NotFoundError, ValidationError } from '../utils/errors';
 import { planService, presentPlan, premiumActive } from './plan.service';
 import { activityRepository } from '../repositories/activity.repository';
 import { logger } from '../utils/logger';
+import { wholeAmount } from '../utils/money';
+import { config } from '../config';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function adminEmails() {
-  return (process.env.SUPER_ADMIN_EMAIL || '')
+  return config.superAdmin.email
     .split(',')
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
@@ -56,7 +58,7 @@ function presentAdminUser(user: {
 }
 
 function money(value: unknown) {
-  return Number(value || 0);
+  return wholeAmount(value);
 }
 
 function dayKey(value: Date | string) {
@@ -144,7 +146,7 @@ async function loadUser(userId: string) {
 export const adminService = {
   async ensureConfiguredAdmin() {
     const primary = adminEmails()[0];
-    const password = process.env.SUPER_ADMIN_PASSWORD || '';
+    const password = config.superAdmin.password;
     if (primary && password) {
       const existing = await prisma.user.findFirst({ where: { email: primary } });
       if (!existing) {
@@ -152,18 +154,26 @@ export const adminService = {
           data: {
             email: primary,
             password: await bcrypt.hash(password, 12),
-            firstName: process.env.SUPER_ADMIN_FIRST_NAME || 'Voki',
-            lastName: process.env.SUPER_ADMIN_LAST_NAME || 'Admin',
+            firstName: config.superAdmin.firstName,
+            lastName: config.superAdmin.lastName,
             role: 'SUPER_ADMIN',
           },
         });
         logger.info('Created the super admin account');
-      } else if (existing.role !== 'SUPER_ADMIN' || existing.deletedAt) {
-        await prisma.user.update({
-          where: { id: existing.id },
-          data: { role: 'SUPER_ADMIN', deletedAt: null },
-        });
-        logger.info('Restored the super admin account');
+      } else {
+        const passwordMatches = await bcrypt.compare(password, existing.password);
+        const needsRestore = existing.role !== 'SUPER_ADMIN' || Boolean(existing.deletedAt);
+        if (!passwordMatches || needsRestore) {
+          await prisma.user.update({
+            where: { id: existing.id },
+            data: {
+              role: 'SUPER_ADMIN',
+              deletedAt: null,
+              ...(!passwordMatches ? { password: await bcrypt.hash(password, 12) } : {}),
+            },
+          });
+          logger.info('Restored the super admin account');
+        }
       }
     }
     await this.promoteConfiguredAdmins();

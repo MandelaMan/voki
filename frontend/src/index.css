@@ -29,7 +29,7 @@ html {
 }
 
 body {
-  @apply bg-[#eef3f9] text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+  @apply bg-[#e7eefb] text-slate-900 dark:bg-slate-950 dark:text-slate-100;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: calc(0.8125rem + 0.5px);
   line-height: 1.45;
@@ -113,6 +113,18 @@ body {
   letter-spacing: -0.02em;
 }
 
+html:not(.dark) :is(h1, h2, .text-display) {
+  color: #0f172a;
+}
+
+html:not(.dark) :is(h3, .text-heading) {
+  color: #1e293b;
+}
+
+html:not(.dark) .text-label {
+  color: #2f4dcc;
+}
+
 .safe-bottom {
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -185,8 +197,13 @@ body {
   color: #fff;
 }
 
+/* White chips nested in a primary surface keep their own icon colour */
+:is(.bg-primary-600, .bg-primary-700, .bg-primary-800) .bg-white svg {
+  color: inherit;
+}
+
 .surface-card {
-  @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800;
+  @apply bg-white dark:bg-slate-900 rounded-2xl border border-primary-100 dark:border-slate-800;
   box-shadow: var(--shadow-soft);
 }
 
@@ -203,6 +220,14 @@ body {
   @apply border-primary-300 dark:border-primary-600 ring-[3px] ring-primary-500/15 bg-white dark:bg-slate-900;
 }
 
+fieldset:disabled .surface-input {
+  opacity: 0.6;
+}
+
+fieldset:disabled :is(input, select, textarea) {
+  cursor: not-allowed;
+}
+
 @keyframes slide-up {
   from { transform: translateY(100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -211,15 +236,23 @@ body {
 @keyframes page-transition {
   from {
     opacity: 0;
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
+    transform: none;
   }
 }
 
 .page-transition {
   width: 100%;
-  animation: page-transition 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: page-transition 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition {
+    animation: none;
+  }
 }
 
 .page-stack {
@@ -247,7 +280,7 @@ body {
   top: 0;
   left: 0;
   z-index: 20;
-  background: #eef3f9;
+  background: #e7eefb;
 }
 
 .admin-table-scroll {
@@ -295,7 +328,7 @@ body {
     content: attr(data-label);
     font-size: 0.75rem;
     font-weight: 600;
-    color: #64748b;
+    color: #2f4dcc;
   }
 }
 
@@ -328,7 +361,7 @@ body {
   content: attr(data-label);
   font-size: 0.75rem;
   font-weight: 600;
-  color: #64748b;
+  color: #2f4dcc;
 }
 
 .admin-sheet td button {
@@ -338,8 +371,8 @@ body {
 }
 
 .admin-sheet th {
-  background: #e4f1fa;
-  color: #475569;
+  background: #d7e6fb;
+  color: #1e3a8a;
 }
 
 .admin-sheet tbody td {
@@ -358,9 +391,9 @@ body {
   background: #020617;
 }
 
-.dark .admin-sheet th {
-  background: #1a3144;
-  color: #cbd5e1;
+.dark .admin-sheet td::before,
+.dark .admin-sheet.is-stacked td::before {
+  color: #93c5fd;
 }
 
 .dark .admin-sheet tbody td {

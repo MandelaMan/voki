@@ -13,8 +13,10 @@ import {
   GoogleIcon,
   SocialButton,
 } from '../components/auth/AuthScreen';
-import { useAuthStore, useBusinessStore } from '../stores';
+import { Form } from '../components/ui/Form';
 import { businessApi } from '../api';
+import { getApiErrorMessage } from '../lib/utils';
+import { useAuthStore, useBusinessStore } from '../stores';
 
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
@@ -51,15 +53,10 @@ export default function LoginPage() {
         navigate('/onboarding');
       }
     } catch (err) {
-      if (axios.isAxiosError(err) && !err.response) {
-        setError('Cannot reach the server. Start Docker MySQL and the API, then try again.');
-      } else if (axios.isAxiosError(err) && err.response?.status === 401) {
-        setError('Invalid email or password');
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        setError('Invalid email or password.');
       } else {
-        const message = axios.isAxiosError(err)
-          ? err.response?.data?.error?.message
-          : null;
-        setError(message || 'Sign in failed. Try again.');
+        setError(getApiErrorMessage(err, 'Sign in failed. Try again.'));
       }
     }
   };
@@ -71,10 +68,10 @@ export default function LoginPage() {
   return (
     <AuthScreen
       title="Welcome Back to Voki"
-      subtitle="Enter valid email & password to continue"
+      subtitle="Sign in to continue"
       footer={
         <>
-          Haven&apos;t any account?{' '}
+          Don&apos;t have an account?{' '}
           <Link to="/register" className="font-bold text-primary-600 hover:underline dark:text-primary-300">
             Sign up
           </Link>
@@ -90,7 +87,7 @@ export default function LoginPage() {
         </>
       }
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
+      <Form busy={isSubmitting} onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
         {error && (
           <p className="rounded-2xl bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-300" role="alert">
             {error}
@@ -118,7 +115,7 @@ export default function LoginPage() {
         />
 
         <div className="flex items-center justify-between gap-3">
-          <label className="flex cursor-pointer items-center gap-2 text-[13px] text-neutral-500 dark:text-neutral-400">
+          <label className="flex cursor-pointer items-center gap-2 text-[13px] font-medium text-slate-600 dark:text-neutral-400">
             <input
               type="checkbox"
               checked={remember}
@@ -136,7 +133,7 @@ export default function LoginPage() {
         </div>
 
         <AuthPrimaryButton loading={isSubmitting}>Log In</AuthPrimaryButton>
-      </form>
+      </Form>
 
       <div className="my-3 flex items-center gap-4">
         <span className="h-px flex-1 bg-neutral-300/80 dark:bg-white/15" />

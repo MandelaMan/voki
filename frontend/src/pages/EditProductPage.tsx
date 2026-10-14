@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { Form } from '../components/ui/Form';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Alert } from '../components/ui/Alert';
@@ -53,8 +54,8 @@ export default function EditProductPage() {
       description: product.description || '',
       categoryId: product.category?.id || '',
       supplierId: product.supplier?.id || '',
-      buyingPrice: String(Number(product.buyingPrice)),
-      sellingPrice: String(Number(product.sellingPrice)),
+      buyingPrice: String(Math.round(Number(product.buyingPrice) || 0)),
+      sellingPrice: String(Math.round(Number(product.sellingPrice) || 0)),
     });
   }, [product]);
 
@@ -66,8 +67,8 @@ export default function EditProductPage() {
       description: form.description,
       categoryId: form.categoryId || null,
       supplierId: form.supplierId || null,
-      buyingPrice: Number(form.buyingPrice) || 0,
-      sellingPrice: Number(form.sellingPrice) || 0,
+      buyingPrice: Math.round(Number(form.buyingPrice) || 0),
+      sellingPrice: Math.round(Number(form.sellingPrice) || 0),
     }),
     onSuccess: async () => {
       await refreshCommerce(queryClient);
@@ -86,7 +87,8 @@ export default function EditProductPage() {
       </button>
       <PageHeader title="Edit product" subtitle={product.sku} />
       {saveError && <Alert variant="error">{saveError}</Alert>}
-      <form
+      <Form
+        busy={mutation.isPending}
         className="space-y-3"
         onSubmit={(event) => {
           event.preventDefault();
@@ -114,16 +116,16 @@ export default function EditProductPage() {
           options={[{ value: '', label: 'No supplier' }, ...(suppliers ?? []).map((supplier) => ({ value: supplier.id, label: supplier.name }))]}
         />
         <div className="grid grid-cols-2 gap-3">
-          <Input label="Buy price" type="number" min={0} step="0.01" value={form.buyingPrice} onChange={(e) => setForm({ ...form, buyingPrice: e.target.value })} />
-          <Input label="Sell price" type="number" min={0} step="0.01" value={form.sellingPrice} onChange={(e) => setForm({ ...form, sellingPrice: e.target.value })} />
+          <Input label="Buy price" type="number" min={0} step={1} value={form.buyingPrice} onChange={(e) => setForm({ ...form, buyingPrice: e.target.value })} />
+          <Input label="Sell price" type="number" min={0} step={1} value={form.sellingPrice} onChange={(e) => setForm({ ...form, sellingPrice: e.target.value })} />
         </div>
         <p className="text-xs text-slate-500">
-          Need a new supplier? <Link to="/suppliers" className="font-semibold text-primary-600">Add one</Link>
+          <Link to="/suppliers" className="font-semibold text-primary-600">Suppliers</Link>
           {' · '}
-          <Link to="/categories" className="font-semibold text-primary-600">Manage categories</Link>
+          <Link to="/categories" className="font-semibold text-primary-600">Categories</Link>
         </p>
         <Button type="submit" className="w-full" loading={mutation.isPending}>Save changes</Button>
-      </form>
+      </Form>
     </div>
   );
 }

@@ -26,7 +26,7 @@ export const errorHandler = (
     const code = err instanceof Prisma.PrismaClientKnownRequestError ? err.code : 'DATABASE_ERROR';
     return res.status(500).json({
       success: false,
-      error: { message: err.message, code },
+      error: { message: 'Something went wrong on our side. Please try again.', code },
     });
   }
 

@@ -6,6 +6,8 @@ import { activityRepository } from '../repositories/activity.repository';
 import { planService } from './plan.service';
 import { mpesaService } from './mpesa.service';
 import { normalizeKenyanPhone } from '../utils/phone';
+import { wholeAmount } from '../utils/money';
+import { parsePaymentMethods } from '../utils/paymentMethods';
 
 async function upsertCustomer(
   tx: Prisma.TransactionClient,
@@ -144,6 +146,10 @@ export const saleService = {
   }) {
     const business = await prisma.business.findUnique({ where: { id: data.businessId } });
     const threshold = business?.lowStockThreshold ?? 5;
+    const allowedPayments = parsePaymentMethods(business?.paymentMethods);
+    if (!allowedPayments.includes(data.paymentMethod as typeof allowedPayments[number])) {
+      throw new ValidationError('That payment method is not enabled for this business.');
+    }
     const premium = (await planService.loadBilling(userId)).isPremium;
     const wantsPrompt = Boolean(data.promptMpesa) && !data.offlineId;
     if (wantsPrompt && !premium) {
@@ -192,8 +198,8 @@ export const saleService = {
             throw new ValidationError(`Insufficient stock for ${product.name} (${variant.variantValue})`);
           }
 
-          const sellPrice = item.sellingPrice ?? Number(variant.sellingPrice);
-          const buyPrice = Number(variant.buyingPrice);
+          const sellPrice = wholeAmount(item.sellingPrice ?? Number(variant.sellingPrice));
+          const buyPrice = wholeAmount(variant.buyingPrice);
           const profit = (sellPrice - buyPrice) * item.quantity;
 
           saleItems.push({
@@ -233,8 +239,8 @@ export const saleService = {
             throw new ValidationError(`Insufficient stock for ${product.name}`);
           }
 
-          const sellPrice = item.sellingPrice ?? Number(product.sellingPrice);
-          const buyPrice = Number(product.buyingPrice);
+          const sellPrice = wholeAmount(item.sellingPrice ?? Number(product.sellingPrice));
+          const buyPrice = wholeAmount(product.buyingPrice);
           const profit = (sellPrice - buyPrice) * item.quantity;
 
           saleItems.push({

@@ -1,4 +1,4 @@
-import { type HTMLAttributes } from 'react';
+import { type HTMLAttributes, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { cn, currencySymbol } from '../../lib/utils';
@@ -31,26 +31,35 @@ export function HeroCard({
   value,
   subtitle,
   icon,
+  footer,
   className,
 }: {
   title: string;
   value: string;
-  subtitle?: string;
+  subtitle?: ReactNode;
   icon?: React.ReactNode;
+  footer?: ReactNode;
   className?: string;
 }) {
   return (
-    <div className={cn('surface-card p-4 flex items-start justify-between gap-3', className)}>
-      <div className="min-w-0 space-y-1">
-        <p className="text-sm text-slate-500">{title}</p>
-        <p className="text-2xl sm:text-[1.75rem] font-bold tracking-tight text-slate-900 dark:text-white truncate">{value}</p>
-        {subtitle && (
-          <p className="text-xs text-slate-500 leading-snug">{subtitle}</p>
+    <div className={cn('surface-card p-4', className)}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">{title}</p>
+          <p className="text-2xl sm:text-[1.75rem] font-bold tracking-tight text-slate-900 dark:text-white truncate">{value}</p>
+          {subtitle && (
+            <p className="text-xs text-slate-500 leading-snug">{subtitle}</p>
+          )}
+        </div>
+        {icon && (
+          <div className="w-11 h-11 rounded-xl bg-primary-600 text-white flex items-center justify-center shrink-0 [&_svg]:text-white">
+            {icon}
+          </div>
         )}
       </div>
-      {icon && (
-        <div className="w-11 h-11 rounded-xl bg-primary-600 text-white flex items-center justify-center shrink-0 [&_svg]:text-white">
-          {icon}
+      {footer && (
+        <div className="mt-3 border-t border-primary-100 pt-3 dark:border-slate-800">
+          {footer}
         </div>
       )}
     </div>
@@ -66,8 +75,8 @@ export function StatCard({
   className,
 }: {
   title: string;
-  value: string;
-  subtitle?: string;
+  value: ReactNode;
+  subtitle?: ReactNode;
   icon?: React.ReactNode;
   trend?: 'up' | 'down';
   className?: string;
@@ -75,7 +84,7 @@ export function StatCard({
   return (
     <Card className={cn('flex flex-col gap-2 !p-4 min-w-0', className)}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{title}</span>
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">{title}</span>
         {icon && (
           <span className="w-8 h-8 rounded-xl bg-primary-50 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
             {icon}

@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import { config } from './config';
 import routes from './routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { serveStoredUpload } from './services/storedFile.service';
 
 const app = express();
 
@@ -24,6 +25,7 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 app.use('/uploads', express.static(path.resolve(config.uploadDir)));
+app.use('/uploads', serveStoredUpload);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

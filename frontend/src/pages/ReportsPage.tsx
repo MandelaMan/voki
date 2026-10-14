@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Skeleton } from '../components/ui/Badge';
 import { FilterTabs, PageHeader } from '../components/ui/PageHeader';
 import { formatCurrency } from '../lib/utils';
+import { ProfitAmount } from '../components/ui/ProfitAmount';
 import { reportApi } from '../api';
 import { PremiumNotice } from '../components/billing/PremiumNotice';
 import { useBusinessStore, usePremium } from '../stores';
@@ -93,7 +94,7 @@ export default function ReportsPage() {
 
   return (
     <div className="page-stack">
-      <PageHeader title="Reports" subtitle="Export and review business data" />
+      <PageHeader title="Reports" />
 
       <FilterTabs
         options={[
@@ -109,7 +110,9 @@ export default function ReportsPage() {
       ) : profit && (
         <Card>
           <h3 className="text-heading mb-3">
-            {profitRange === 'month' ? 'This Month Profit Summary' : 'Profit Summary'}
+            {profit.summary.totalProfit < 0
+              ? (profitRange === 'month' ? 'This Month Loss Summary' : 'Loss Summary')
+              : (profitRange === 'month' ? 'This Month Profit Summary' : 'Profit Summary')}
           </h3>
           <div className="space-y-2.5 text-sm">
             <div className="flex items-center justify-between gap-3">
@@ -121,8 +124,8 @@ export default function ReportsPage() {
               <span className="font-semibold tabular-nums truncate">{formatCurrency(profit.summary.totalRevenue, currency)}</span>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <span className="text-slate-500">Profit</span>
-              <span className="font-semibold text-emerald-600 tabular-nums truncate">{formatCurrency(profit.summary.totalProfit, currency)}</span>
+              <span className="text-slate-500">{profit.summary.totalProfit < 0 ? 'Loss' : 'Profit'}</span>
+              <ProfitAmount amount={profit.summary.totalProfit} currency={currency} className="font-semibold truncate" />
             </div>
           </div>
         </Card>
@@ -130,16 +133,15 @@ export default function ReportsPage() {
 
       <div className="space-y-2">
         {[
-          { type: 'inventory', label: 'Inventory Report', desc: 'All products and stock levels' },
-          { type: 'sales', label: 'Sales Report', desc: 'All sales transactions' },
-          { type: 'lowstock', label: 'Low Stock Report', desc: `${lowStock?.length || 0} items need attention` },
+          { type: 'inventory', label: 'Inventory Report' },
+          { type: 'sales', label: 'Sales Report' },
+          { type: 'lowstock', label: 'Low Stock Report' },
         ].map((report) => (
           <Card key={report.type} className="flex items-center gap-3 !p-3">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <FileText size={20} className="text-primary-500 shrink-0" />
               <div className="min-w-0">
                 <p className="font-medium text-sm truncate">{report.label}</p>
-                <p className="text-xs text-slate-500 truncate">{report.desc}</p>
               </div>
             </div>
             <button
@@ -193,7 +195,7 @@ export default function ReportsPage() {
       ) : (
         <PremiumNotice
           title="End-of-day cash-up is on Premium"
-          description="See the day’s takings split by cash, M-Pesa, card, and bank."
+          description="See each day's takings by payment method."
         />
       )}
 
@@ -201,7 +203,7 @@ export default function ReportsPage() {
         <Card className="space-y-3">
           <h3 className="text-heading">Restock suggestions</h3>
           {!restock?.length ? (
-            <p className="text-caption text-slate-500">Nothing is close to running out based on the last 30 days.</p>
+            <p className="text-caption text-slate-500">Nothing is running low based on the last 30 days.</p>
           ) : (
             <div className="space-y-2">
               {restock.map((item) => (
@@ -221,7 +223,7 @@ export default function ReportsPage() {
       ) : (
         <PremiumNotice
           title="Restock suggestions are on Premium"
-          description="See which items will run out if they keep selling at the recent pace."
+          description="See which items will run out soon at the current pace."
         />
       )}
     </div>

@@ -11,7 +11,7 @@ export default function SearchPage() {
 
   return (
     <div className="page-stack">
-      <PageHeader title="Search" subtitle="Find products by name, SKU, or brand" />
+      <PageHeader title="Search" />
       <ProductSearchBox
         businessId={activeBusiness?.id}
         value={query}

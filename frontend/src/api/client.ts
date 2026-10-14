@@ -48,7 +48,10 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && !originalRequest._retry && refreshToken) {
+    const requestUrl = originalRequest?.url || '';
+    const isCredentialRequest = /\/auth\/(login|register|refresh|forgot-password|reset-password)(?:\?|$)/.test(requestUrl);
+
+    if (error.response?.status === 401 && !originalRequest._retry && refreshToken && !isCredentialRequest) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });

@@ -32,7 +32,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="page-stack">
-      <PageHeader title="Notifications" subtitle="Stay updated on your business" />
+      <PageHeader title="Notifications" />
 
       {actionError && <Alert variant="error">{actionError}</Alert>}
 
@@ -46,7 +46,7 @@ export default function NotificationsPage() {
       />
 
       {!filtered.length ? (
-        <EmptyState icon={<Bell size={48} />} title="No notifications" description="You're all caught up!" />
+        <EmptyState icon={<Bell size={48} />} title="No notifications" description="You're all caught up." />
       ) : (
         <div className="space-y-2">
           {filtered.map((n) => (

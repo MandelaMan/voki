@@ -64,12 +64,13 @@ function stepNumberInput(input: HTMLInputElement, direction: 1 | -1) {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, hint, icon, id, type, disabled, onChange, onKeyDown, onBeforeInput, ...props }, ref) => {
+  ({ className, label, error, hint, icon, id, type, disabled, step, onChange, onKeyDown, onBeforeInput, ...props }, ref) => {
     const innerRef = useRef<HTMLInputElement>(null);
     const [showPassword, setShowPassword] = useState(false);
     const isNumber = type === 'number';
     const isPassword = type === 'password';
     const inputType = isPassword && showPassword ? 'text' : type;
+    const wholeNumber = isNumber && (step === undefined || Number.isInteger(Number(step)));
 
     const handleStep = useCallback((direction: 1 | -1) => {
       const input = innerRef.current;
@@ -80,6 +81,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const handleNumberKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
       onKeyDown?.(event);
       if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (wholeNumber && (event.key === '.' || event.key === ',' || event.key === 'e' || event.key === 'E')) {
+        event.preventDefault();
+        return;
+      }
       if (!/^[0-9]$/.test(event.key) || !isPlaceholderZero(event.currentTarget.value)) return;
       event.preventDefault();
       commitDigitOverZero(event.currentTarget, event.key);
@@ -89,13 +94,21 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       onBeforeInput?.(event as React.InputEvent<HTMLInputElement>);
       if (event.defaultPrevented) return;
       const data = (event.nativeEvent as InputEvent).data ?? '';
+      if (wholeNumber && /[.,eE]/.test(data)) {
+        event.preventDefault();
+        return;
+      }
       if (!/^[0-9]$/.test(data) || !isPlaceholderZero(event.currentTarget.value)) return;
       event.preventDefault();
       commitDigitOverZero(event.currentTarget, data);
     };
 
     const handleNumberChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const next = stripLeadingZeros(event.target.value);
+      let value = event.target.value;
+      if (wholeNumber && value.includes('.')) {
+        value = String(Math.round(Number(value)));
+      }
+      const next = stripLeadingZeros(value);
       if (next !== event.target.value) {
         setNativeValue(event.target, next);
       }
@@ -164,7 +177,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           id={id}
           type="number"
           disabled={disabled}
-          inputMode="decimal"
+          step={wholeNumber ? (step ?? 1) : step}
+          inputMode={wholeNumber ? 'numeric' : 'decimal'}
           className={cn(
             'w-full py-2.5 border-0 bg-transparent text-slate-900 dark:text-slate-100',
             'placeholder:text-slate-400 focus:outline-none min-h-[44px] text-body',

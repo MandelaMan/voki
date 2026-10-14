@@ -11,7 +11,7 @@ export function AuthScreen({
   children,
 }: {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   footer: ReactNode;
   children: ReactNode;
 }) {
@@ -22,14 +22,15 @@ export function AuthScreen({
           'relative flex min-h-svh w-full flex-col px-7 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]',
           'bg-[linear-gradient(180deg,#d7e4ff_0%,#eef3ff_24%,#f6f8fc_58%,#f4f6fb_100%)]',
           'dark:bg-[linear-gradient(180deg,#1a2440_0%,#141a2c_40%,#10131c_100%)]',
-          'sm:h-auto sm:min-h-0 sm:max-h-[calc(100svh-2rem)] sm:max-w-[430px] sm:overflow-hidden sm:rounded-[2.25rem] sm:border sm:border-white/80 sm:px-7 sm:py-5',
+          'sm:h-auto sm:min-h-0 sm:max-h-[calc(100svh-2rem)] sm:max-w-[430px] sm:overflow-y-auto sm:rounded-[2.25rem] sm:border sm:border-white/80 sm:px-7 sm:py-5',
           'sm:shadow-[0_28px_70px_-24px_rgba(20,20,20,0.45),0_10px_28px_-16px_rgba(20,20,20,0.18)]',
-          'dark:sm:border-white/10'
+          'dark:sm:border-white/10',
+          'scrollbar-hide page-transition'
         )}
       >
         <ThemeToggle className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 text-stone-500 hover:bg-white/70 dark:text-stone-300 dark:hover:bg-white/10" />
 
-        <div className="flex min-h-0 flex-1 flex-col justify-center">
+        <div className="flex flex-1 flex-col justify-center">
           <div className="mb-3 flex flex-col items-center">
             <VokiMark size={44} />
             <p className="mt-1 text-xl font-extrabold tracking-tight text-primary-600 dark:text-primary-300">
@@ -38,12 +39,14 @@ export function AuthScreen({
           </div>
 
           <div className="mb-5 text-center">
-            <h1 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
               {title}
             </h1>
-            <p className="mx-auto mt-1 max-w-[16rem] text-[13px] leading-snug text-neutral-500 dark:text-neutral-400">
-              {subtitle}
-            </p>
+            {subtitle && (
+              <p className="mx-auto mt-1 max-w-[16rem] text-[13px] leading-snug text-slate-500 dark:text-neutral-400">
+                {subtitle}
+              </p>
+            )}
           </div>
 
           {children}
@@ -116,7 +119,7 @@ export function AuthPillField({ label, icon, error, className, type, id, ref, ..
 
   return (
     <div className="space-y-2">
-      <label htmlFor={inputId} className="block px-3 text-[13px] leading-none text-neutral-500 dark:text-neutral-400">
+      <label htmlFor={inputId} className="block px-3 text-[13px] font-semibold leading-none text-slate-700 dark:text-neutral-400">
         {label}
       </label>
       <div className="relative">
@@ -134,6 +137,7 @@ export function AuthPillField({ label, icon, error, className, type, id, ref, ..
             'focus:ring-2 focus:ring-primary-500/40',
             'dark:bg-neutral-900 dark:text-white dark:shadow-none dark:ring-1 dark:ring-white/10',
             isPassword ? 'pr-12' : 'pr-5',
+            'disabled:cursor-not-allowed disabled:opacity-60',
             error && 'ring-2 ring-red-300',
             className
           )}

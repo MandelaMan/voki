@@ -5,6 +5,7 @@ import fs from 'fs';
 import sharp from 'sharp';
 import { config } from '../config';
 import { logger } from '../utils/logger';
+import { mimeTypeForExtension, saveStoredFile, uploadPublicPath } from '../services/storedFile.service';
 
 /** Longest edge kept. Enough for a full-screen product photo on a phone or laptop. */
 const MAX_EDGE = 2048;
@@ -103,7 +104,14 @@ function compressedStorage(subdir: 'images' | 'receipts'): StorageEngine {
 
           const filename = `${uuidv4()}${ext}`;
           const filepath = path.join(destination, filename);
+          const publicPath = uploadPublicPath(subdir, filename);
           await fs.promises.writeFile(filepath, data);
+          try {
+            await saveStoredFile(publicPath, data, mimeTypeForExtension(ext));
+          } catch (error) {
+            await fs.promises.unlink(filepath).catch(() => undefined);
+            throw error;
+          }
           cb(null, { destination, filename, path: filepath, size: data.length });
         })
         .catch((error: unknown) => {

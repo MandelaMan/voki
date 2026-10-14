@@ -40,14 +40,23 @@ export function currencySymbol(currency = 'USD') {
 export function formatCurrency(amount: number, currency = 'USD') {
   const code = currencyCode(currency);
   const value = Number(amount);
-  const safe = Number.isFinite(value) ? value : 0;
+  const safe = Number.isFinite(value) ? Math.round(value) : 0;
   try {
-    return new Intl.NumberFormat(CURRENCY_LOCALE[code] || 'en-US', {
+    const parts = new Intl.NumberFormat(CURRENCY_LOCALE[code] || 'en-US', {
       style: 'currency',
       currency: code,
-    }).format(safe);
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).formatToParts(Math.abs(safe));
+    const text = parts
+      .filter((part) => part.type !== 'decimal' && part.type !== 'fraction' && part.type !== 'minusSign' && part.type !== 'plusSign')
+      .map((part) => part.value)
+      .join('')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return safe < 0 ? `-${text}` : text;
   } catch {
-    return `${code} ${safe.toFixed(2)}`;
+    return `${safe < 0 ? '-' : ''}${code} ${Math.abs(safe)}`;
   }
 }
 

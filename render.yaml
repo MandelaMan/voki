@@ -19,3 +19,11 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
+      - key: SUPER_ADMIN_EMAIL
+        value: admin@voki.local
+      - key: SUPER_ADMIN_PASSWORD
+        value: VokiAdmin2026
+      - key: SUPER_ADMIN_FIRST_NAME
+        value: Voki
+      - key: SUPER_ADMIN_LAST_NAME
+        value: Admin

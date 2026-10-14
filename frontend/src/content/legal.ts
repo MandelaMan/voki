@@ -72,7 +72,7 @@ export const privacyPolicy: LegalSection[] = [
       },
       {
         type: 'p',
-        text: 'Voki records the payment method you choose. It does not take card numbers, M-Pesa PINs, or process payments.',
+        text: 'Voki records the payment method you choose. It does not take card numbers or M-Pesa PINs, and it does not process payments.',
       },
     ],
   },
@@ -175,7 +175,7 @@ export const privacyPolicy: LegalSection[] = [
     blocks: [
       {
         type: 'p',
-        text: 'Voki is for people running a business. It is not directed at children, and we do not knowingly collect accounts from children.',
+        text: 'Voki is for people running a business. It is not directed at children, and we do not knowingly let children create accounts.',
       },
     ],
   },
@@ -230,7 +230,7 @@ export const termsAndConditions: LegalSection[] = [
           'Give a real name and an email address you can access',
           'Keep your password private and do not share the account',
           'Tell us if you believe someone else has signed in as you',
-          'You are responsible for activity that happens under your account',
+          'Take responsibility for activity on your account',
         ],
       },
       {
@@ -292,7 +292,7 @@ export const termsAndConditions: LegalSection[] = [
     blocks: [
       {
         type: 'p',
-        text: 'The service is provided as it is and as it is available. We do not promise that stock counts, profit, reports, or alerts will be error-free. Decisions you make from those figures are yours.',
+        text: 'The service is provided as is and as available. We do not promise that stock counts, profit, reports, or alerts will be error-free. Decisions you make from those figures are yours.',
       },
       {
         type: 'p',

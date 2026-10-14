@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
+import { Form } from '../components/ui/Form';
 import { PageHeader, StatusBar } from '../components/ui/PageHeader';
 import { authApi } from '../api';
 import { useAuthStore } from '../stores';
@@ -33,16 +34,16 @@ export default function ProfilePage() {
       setTimeout(() => setSaved(false), 2500);
     },
     onError: (error) => {
-      setSaveError(getApiErrorMessage(error, 'Failed to save profile.'));
+      setSaveError(getApiErrorMessage(error, 'Could not save your profile.'));
     },
   });
 
   return (
     <div className="page-stack">
-      <PageHeader title="Profile" subtitle="Manage your account details" />
+      <PageHeader title="Profile" />
 
       <Card className="!p-4">
-        <form onSubmit={handleSubmit((d) => { setSaveError(''); mutation.mutate(d); })} className="space-y-4">
+        <Form busy={mutation.isPending} onSubmit={handleSubmit((d) => { setSaveError(''); mutation.mutate(d); })} className="space-y-4">
           {saveError && <Alert variant="error">{saveError}</Alert>}
           {saved && (
             <StatusBar variant="success">
@@ -57,7 +58,7 @@ export default function ProfilePage() {
           <Button type="submit" className="w-full" size="lg" loading={mutation.isPending}>
             {saved ? 'Saved!' : 'Save Changes'}
           </Button>
-        </form>
+        </Form>
       </Card>
     </div>
   );

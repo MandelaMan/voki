@@ -23,14 +23,14 @@ export default function PurchasesPage() {
     <div className="page-stack">
       <PageHeader
         title="Purchases"
-        subtitle="Buying stock adds units to products you already created"
+        subtitle="Each purchase adds stock to your products"
         action={<Button to="/purchases/new" size="sm"><Plus size={18} /> Record</Button>}
       />
 
       {isLoading ? (
         <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}</div>
       ) : !data?.purchases.length ? (
-        <EmptyState title="No purchases yet" description="Create the product first, then record a purchase to add stock" action={<Button to="/purchases/new">Record Purchase</Button>} />
+        <EmptyState title="No purchases yet" description="Create the product first, then record what you bought." action={<Button to="/purchases/new">Record Purchase</Button>} />
       ) : (
         <div className="space-y-2">
           {data.purchases.map((purchase) => (
@@ -38,7 +38,7 @@ export default function PurchasesPage() {
               <ListRow
                 icon={<Truck size={18} />}
                 title={purchase.supplier?.name || 'Purchase'}
-                subtitle={`${formatDate(purchase.purchaseDate)}${purchase.receiptNumber ? ` · #${purchase.receiptNumber}` : ''} · ${purchase.items?.length || 0} item(s)`}
+                subtitle={`${formatDate(purchase.purchaseDate)}${purchase.receiptNumber ? ` · #${purchase.receiptNumber}` : ''} · ${purchase.items?.length || 0} ${(purchase.items?.length || 0) === 1 ? 'item' : 'items'}`}
                 trailing={<p className="text-body-medium font-bold">{formatCurrency(Number(purchase.totalCost), currency)}</p>}
               />
             </Link>

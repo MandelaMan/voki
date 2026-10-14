@@ -4,6 +4,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus, X, Package } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { Form } from '../components/ui/Form';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Card } from '../components/ui/Card';
@@ -93,7 +94,7 @@ export default function NewPurchasePage() {
       append({
         name: product.name,
         quantity: 1,
-        unitCost: Number(product.buyingPrice) || 0,
+        unitCost: Math.round(Number(product.buyingPrice) || 0),
         productId: product.id,
       });
     }
@@ -116,7 +117,7 @@ export default function NewPurchasePage() {
         items: data.items.map((item) => ({
           name: item.name.trim(),
           quantity: Number(item.quantity),
-          unitCost: Number(item.unitCost),
+          unitCost: Math.round(Number(item.unitCost) || 0),
           ...(item.productId ? { productId: item.productId } : {}),
         })),
       }),
@@ -125,7 +126,7 @@ export default function NewPurchasePage() {
       navigate('/purchases');
     },
     onError: (error) => {
-      setSaveError(getApiErrorMessage(error, 'Failed to save purchase. Please try again.'));
+      setSaveError(getApiErrorMessage(error, 'Could not save the purchase. Please try again.'));
     },
   });
 
@@ -150,7 +151,7 @@ export default function NewPurchasePage() {
     return (
       <div className="page-stack">
         <PageHeader title="Record Purchase" />
-        <Alert variant="warning">You need to set up a business before recording purchases.</Alert>
+        <Alert variant="warning">Set up a business first.</Alert>
       </div>
     );
   }
@@ -165,17 +166,9 @@ export default function NewPurchasePage() {
         <ArrowLeft size={16} /> Back to purchases
       </button>
 
-      <PageHeader
-        title="Record Purchase"
-        subtitle="Add units to products you already created"
-      />
+      <PageHeader title="Record Purchase" subtitle="Add units to products you already created" />
 
-      <Alert variant="info">
-        Choose a product to increase its stock. A custom line is only a cost and does not change inventory. New items are created with{' '}
-        <Link to="/inventory/new" className="font-semibold underline">Add Product</Link>.
-      </Alert>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <Form busy={mutation.isPending} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {saveError && <Alert variant="error">{saveError}</Alert>}
 
         <FormSection>
@@ -217,7 +210,6 @@ export default function NewPurchasePage() {
           <StepBadge step={2} label="What you bought" />
 
           <div className="space-y-2">
-            <p className="text-caption text-slate-500">Search a product to add those units to stock</p>
             <ProductSearchBox
               businessId={activeBusiness?.id}
               value={search}
@@ -237,9 +229,7 @@ export default function NewPurchasePage() {
             <div className="text-center py-8 px-4 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700">
               <Package size={28} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
               <p className="text-body-medium text-slate-600 dark:text-slate-400">No items yet</p>
-              <p className="text-caption text-slate-500 mt-1">
-                Search for a product, or add a cost that should not change stock
-              </p>
+              <p className="text-caption text-slate-500 mt-1">Search a product above to add units.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -289,7 +279,7 @@ export default function NewPurchasePage() {
                         label="Cost per unit"
                         type="number"
                         min={0}
-                        step="0.01"
+                        step={1}
                         {...register(`items.${index}.unitCost`, { valueAsNumber: true, min: 0 })}
                       />
                     </div>
@@ -330,7 +320,7 @@ export default function NewPurchasePage() {
             Save purchase
           </Button>
         </Card>
-      </form>
+      </Form>
     </div>
   );
 }
