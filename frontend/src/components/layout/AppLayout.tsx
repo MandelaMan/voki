@@ -7,7 +7,6 @@ import {
   ShoppingCart,
   Truck,
   Search,
-  User,
   ChevronDown,
   WifiOff,
   Bell,
@@ -19,6 +18,7 @@ import {
   Sparkles,
   AlertTriangle,
   Store,
+  ScanLine,
 } from 'lucide-react';
 import { VokiMark } from '../brand/VokiMark';
 import { PageTransition } from './PageTransition';
@@ -35,7 +35,7 @@ const bottomNav = [
   { to: '/inventory', icon: Package, label: 'Stock' },
   { to: '/sales/new', icon: ShoppingCart, label: 'Sell' },
   { to: '/purchases', icon: Truck, label: 'Buy' },
-  { to: '/more', icon: User, label: 'More' },
+  { to: '/more', icon: Settings, label: 'Settings' },
 ];
 
 const adminBottomNav = [
@@ -43,7 +43,7 @@ const adminBottomNav = [
   { to: '/admin/subscribers', icon: Users, label: 'People' },
   { to: '/admin/stock', icon: Package, label: 'Stock' },
   { to: '/admin/issues', icon: AlertTriangle, label: 'Issues' },
-  { to: '/more', icon: User, label: 'More' },
+  { to: '/more', icon: Settings, label: 'Settings' },
 ];
 
 const adminSideItems = [
@@ -55,7 +55,6 @@ const adminSideItems = [
   { to: '/admin/purchases', icon: Truck, label: 'Purchases' },
   { to: '/admin/issues', icon: AlertTriangle, label: 'Issues' },
   { to: '/admin/pricing', icon: Sparkles, label: 'Pricing' },
-  { to: '/more', icon: Settings, label: 'Settings' },
 ];
 
 const sideItems = [
@@ -63,12 +62,12 @@ const sideItems = [
   { to: '/inventory', icon: Package, label: 'Items' },
   { to: '/sales', icon: ShoppingCart, label: 'Sales' },
   { to: '/purchases', icon: Truck, label: 'Purchases' },
-  { to: '/plan', icon: Sparkles, label: 'Premium' },
+  { to: '/lists/scan', icon: ScanLine, label: 'Scan list' },
+  { to: '/customers', icon: Users, label: 'Customers' },
   { to: '/reports', icon: BarChart3, label: 'Reports' },
   { to: '/categories', icon: Tag, label: 'Categories' },
-  { to: '/suppliers', icon: Users, label: 'Suppliers' },
+  { to: '/suppliers', icon: Truck, label: 'Suppliers' },
   { to: '/notifications', icon: Bell, label: 'Notifications' },
-  { to: '/more', icon: Settings, label: 'Settings' },
 ];
 
 function isBottomActive(pathname: string, to: string, isSuperAdmin: boolean) {
@@ -90,6 +89,8 @@ function isBottomActive(pathname: string, to: string, isSuperAdmin: boolean) {
       || pathname.startsWith('/notifications')
       || pathname.startsWith('/reports')
       || pathname.startsWith('/plan')
+      || pathname.startsWith('/settings')
+      || pathname.startsWith('/lists')
       || (!isSuperAdmin && pathname.startsWith('/admin'))
       || pathname.startsWith('/customers')
       || pathname.startsWith('/privacy')
@@ -116,6 +117,8 @@ function sectionLabel(pathname: string) {
   if (pathname.startsWith('/purchases')) return 'Purchases';
   if (pathname.startsWith('/reports')) return 'Reports';
   if (pathname.startsWith('/plan')) return 'Premium';
+  if (pathname.startsWith('/settings/configurations')) return 'Configurations';
+  if (pathname.startsWith('/lists/scan')) return 'Scan a list';
   if (pathname === '/admin') return 'Overview';
   if (pathname.startsWith('/admin/subscribers')) return 'Subscriber';
   if (pathname.startsWith('/admin/shops')) return 'Shops';
@@ -126,7 +129,6 @@ function sectionLabel(pathname: string) {
   if (pathname.startsWith('/admin/pricing')) return 'Pricing';
   if (pathname.startsWith('/admin')) return 'Admin';
   if (pathname.startsWith('/customers')) return 'Customers';
-  if (pathname.includes('/receipt')) return 'Receipt';
   if (pathname.startsWith('/search')) return 'Search';
   if (pathname.startsWith('/categories')) return 'Categories';
   if (pathname.startsWith('/suppliers')) return 'Suppliers';
@@ -498,6 +500,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <Bell size={18} />
               </button>
               <ThemeToggle />
+              <button
+                type="button"
+                onClick={() => navigate('/more')}
+                className={cn(
+                  'p-2 rounded-xl hover:bg-white dark:hover:bg-slate-800',
+                  pathname === '/more' || pathname.startsWith('/plan') || pathname.startsWith('/profile') || pathname.startsWith('/settings')
+                    ? 'bg-white text-primary-600 dark:bg-slate-800 dark:text-primary-300'
+                    : 'text-slate-600 dark:text-slate-400'
+                )}
+                aria-label="Settings"
+                title="Settings"
+              >
+                <Settings size={18} />
+              </button>
               <button
                 type="button"
                 onClick={logout}

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "predev": "prisma db push --skip-generate",
+    "predev": "prisma db push --skip-generate --accept-data-loss",
     "dev": "tsx watch src/index.ts",
     "build": "prisma generate && tsc",
     "start": "prisma db push --skip-generate --accept-data-loss && node dist/index.js",
@@ -12,7 +12,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:simulate-test": "tsx prisma/simulate-test-flow.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -22,6 +23,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
@@ -32,8 +34,8 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
-    "sharp": "^0.35.3",
     "prisma": "^5.22.0",
+    "sharp": "^0.35.3",
     "uuid": "^14.0.1",
     "zod": "^4.4.3"
   },

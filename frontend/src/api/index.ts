@@ -25,7 +25,10 @@ import type {
   Receipt,
   Customer,
   CashUp,
+  ProfitReport,
   RestockSuggestion,
+  ListOcrKind,
+  ListOcrResult,
 } from '../types';
 
 export const authApi = {
@@ -52,6 +55,38 @@ export const businessApi = {
     clearMpesaCredentials?: boolean;
   }) => api.put(`/businesses/${id}`, data).then((r) => r.data.data as Business),
   delete: (id: string) => api.delete(`/businesses/${id}`),
+};
+
+export type IntegrationSummary = {
+  businessId: string;
+  businessName: string;
+  mpesa: {
+    type: 'PAYBILL' | 'TILL' | null;
+    shortCode: string | null;
+    account: string | null;
+    ready: boolean;
+  };
+  gemini: { configured: boolean; usingPlatformFallback: boolean };
+  removeBg: { configured: boolean; usingPlatformFallback: boolean };
+};
+
+export const integrationApi = {
+  summary: (businessId: string) =>
+    api.get('/integrations', { params: { businessId } }).then((r) => r.data.data as IntegrationSummary),
+  update: (data: {
+    businessId: string;
+    mpesaType?: 'PAYBILL' | 'TILL';
+    mpesaShortCode?: string;
+    mpesaAccount?: string;
+    mpesaConsumerKey?: string;
+    mpesaConsumerSecret?: string;
+    mpesaPasskey?: string;
+    clearMpesaCredentials?: boolean;
+    geminiApiKey?: string;
+    clearGeminiApiKey?: boolean;
+    removeBgApiKey?: string;
+    clearRemoveBgApiKey?: boolean;
+  }) => api.put('/integrations', data).then((r) => r.data.data as IntegrationSummary),
 };
 
 export const categoryApi = {
@@ -86,9 +121,10 @@ export const productApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }).then((r) => r.data.data);
   },
-  removeBackground: async (file: File) => {
+  removeBackground: async (file: File, businessId?: string) => {
     const form = new FormData();
     form.append('image', file);
+    if (businessId) form.append('businessId', businessId);
     try {
       const response = await api.post('/images/remove-background', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -148,7 +184,7 @@ export const reportApi = {
   sales: (businessId: string, startDate?: string, endDate?: string) =>
     api.get('/reports/sales', { params: { businessId, startDate, endDate } }).then((r) => r.data.data),
   profit: (businessId: string, startDate?: string, endDate?: string) =>
-    api.get('/reports/profit', { params: { businessId, startDate, endDate } }).then((r) => r.data.data),
+    api.get('/reports/profit', { params: { businessId, startDate, endDate } }).then((r) => r.data.data as ProfitReport),
   lowStock: (businessId: string) => api.get('/reports/low-stock', { params: { businessId } }).then((r) => r.data.data),
   deadStock: (businessId: string, months?: number) =>
     api.get('/reports/dead-stock', { params: { businessId, months } }).then((r) => r.data.data),
@@ -175,6 +211,19 @@ export const billingApi = {
       isPremium: boolean;
       planExpiresAt?: string | null;
     }),
+};
+
+export const listOcrApi = {
+  scan: (businessId: string, kind: ListOcrKind, image: File) => {
+    const form = new FormData();
+    form.append('businessId', businessId);
+    form.append('kind', kind);
+    form.append('image', image);
+    return api.post('/ocr/list', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90_000,
+    }).then((r) => r.data.data as ListOcrResult);
+  },
 };
 
 export const mpesaApi = {

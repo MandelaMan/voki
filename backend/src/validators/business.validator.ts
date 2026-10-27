@@ -7,7 +7,8 @@ export const createBusinessSchema = z.object({
   description: z.string().optional(),
   currency: z.string().min(1).default('KES'),
   lowStockThreshold: z.number().int().min(0).default(5),
-  paymentMethods: z.array(paymentMethodSchema).min(1),
+  // Default when clients omit the field (older UIs / partial payloads).
+  paymentMethods: z.array(paymentMethodSchema).min(1).default(['CASH', 'MPESA']),
 });
 
 export const updateBusinessSchema = createBusinessSchema.partial().extend({

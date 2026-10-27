@@ -50,7 +50,7 @@ export const businessService = {
     description?: string;
     currency?: string;
     lowStockThreshold?: number;
-    paymentMethods: string[];
+    paymentMethods?: string[];
   }) {
     const business = await prisma.business.create({
       data: {
@@ -59,7 +59,7 @@ export const businessService = {
         description: data.description,
         currency: data.currency || 'KES',
         lowStockThreshold: data.lowStockThreshold,
-        paymentMethods: serializePaymentMethods(data.paymentMethods),
+        paymentMethods: serializePaymentMethods(data.paymentMethods?.length ? data.paymentMethods : ['CASH', 'MPESA']),
       },
     });
     await activityRepository.log({

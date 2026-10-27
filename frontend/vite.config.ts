@@ -57,17 +57,31 @@ export default defineConfig({
           },
         ],
       },
-      devOptions: { enabled: true },
+      // Keep the SW off in dev — it caches the shell and often leaves a blank page after restarts.
+      devOptions: { enabled: false },
     }),
   ],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
   server: {
+    host: true,
     port: 5173,
     proxy: {
-      '/api': { target: 'http://localhost:3001', changeOrigin: true },
-      '/uploads': { target: 'http://localhost:3001', changeOrigin: true },
+      '/api': {
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true,
+        // Backend restarts briefly under tsx watch; keep the socket alive long enough
+        // for the client retry layer to reconnect instead of failing instantly.
+        timeout: 30_000,
+        proxyTimeout: 30_000,
+      },
+      '/uploads': {
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true,
+        timeout: 30_000,
+        proxyTimeout: 30_000,
+      },
     },
   },
 });

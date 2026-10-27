@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import {
   TrendingUp, TrendingDown, Package, AlertTriangle,
-  ArrowRight, ShoppingBag, Plus, BarChart3, Truck,
+  ArrowRight, ShoppingBag, Plus, BarChart3, Truck, ScanLine, Users, Wallet,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card, StatCard, QuickAction } from '../components/ui/Card';
@@ -13,10 +13,11 @@ import { Skeleton } from '../components/ui/Badge';
 import { FilterTabs, PageHeader } from '../components/ui/PageHeader';
 import { formatCurrency, formatRelative } from '../lib/utils';
 import { dashboardApi } from '../api';
-import { useBusinessStore } from '../stores';
+import { useBusinessStore, usePremium } from '../stores';
 
 export default function DashboardPage() {
   const { activeBusiness } = useBusinessStore();
+  const isPremium = usePremium();
   const [profitRange, setProfitRange] = useState<'today' | 'month'>('today');
 
   const { data: stats, isLoading } = useQuery({
@@ -77,6 +78,18 @@ export default function DashboardPage() {
           <QuickAction to="/reports" icon={<BarChart3 size={20} />} label="Reports" />
         </div>
       </div>
+
+      {isPremium && (
+        <div>
+          <h3 className="text-heading text-slate-800 dark:text-slate-200 mb-3">Premium</h3>
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 xl:grid-cols-4 gap-2.5">
+            <QuickAction to="/lists/scan" icon={<ScanLine size={20} />} label="Scan a list" hint="Sales or restock" />
+            <QuickAction to="/customers" icon={<Users size={20} />} label="Customers" />
+            <QuickAction to="/reports#cash-up" icon={<Wallet size={20} />} label="Cash-up" hint="Today’s takings" />
+            <QuickAction to="/reports#restock" icon={<Package size={20} />} label="Restock ideas" />
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
         <StatCard

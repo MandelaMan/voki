@@ -4,9 +4,9 @@
   "private": true,
   "description": "Mobile-first Inventory & Sales Management PWA",
   "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev": "concurrently -k -n api,web -c blue,magenta \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "npm run dev --prefix backend",
-    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:frontend": "node scripts/wait-for-api.mjs && npm run dev --prefix frontend",
     "build": "npm install --include=dev --prefix backend && npm run build --prefix backend",
     "start": "npm run start --prefix backend",
     "db:up": "docker compose up -d --wait",
@@ -14,5 +14,9 @@
     "db:push": "npm run db:push --prefix backend",
     "db:seed": "npm run db:seed --prefix backend",
     "db:studio": "npm run db:studio --prefix backend"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "wait-on": "^8.0.5"
   }
 }

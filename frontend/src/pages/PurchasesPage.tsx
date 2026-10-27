@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Truck } from 'lucide-react';
+import { Camera, Plus, Truck } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { PageHeader, ListRow } from '../components/ui/PageHeader';
 import { Skeleton, EmptyState } from '../components/ui/Badge';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { purchaseApi } from '../api';
-import { useBusinessStore } from '../stores';
+import { useBusinessStore, usePremium } from '../stores';
 
 export default function PurchasesPage() {
   const { activeBusiness } = useBusinessStore();
+  const isPremium = usePremium();
 
   const { data, isLoading } = useQuery({
     queryKey: ['purchases', activeBusiness?.id],
@@ -26,6 +27,12 @@ export default function PurchasesPage() {
         subtitle="Each purchase adds stock to your products"
         action={<Button to="/purchases/new" size="sm"><Plus size={18} /> Record</Button>}
       />
+
+      {isPremium && (
+        <Button to="/lists/scan?kind=PURCHASE" variant="soft" size="sm" className="w-full">
+          <Camera size={16} /> Scan a restock list
+        </Button>
+      )}
 
       {isLoading ? (
         <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}</div>

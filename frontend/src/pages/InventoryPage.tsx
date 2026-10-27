@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Grid3X3, List, Filter, Plus } from 'lucide-react';
+import { Boxes, Camera, Grid3X3, List, Filter, Plus } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { PageHeader, FilterTabs } from '../components/ui/PageHeader';
 import { ProductSearchBox } from '../components/products/ProductSearchBox';
 import { ProductCard } from '../components/products/ProductCard';
 import { Skeleton, EmptyState } from '../components/ui/Badge';
 import { productApi, categoryApi, supplierApi } from '../api';
-import { useBusinessStore, useViewStore } from '../stores';
+import { useBusinessStore, usePremium, useViewStore } from '../stores';
 import { cn, formatCurrency } from '../lib/utils';
 
 const statusFilters = [
@@ -71,6 +71,7 @@ function InventoryToolbar({
 export default function InventoryPage() {
   const navigate = useNavigate();
   const { activeBusiness } = useBusinessStore();
+  const isPremium = usePremium();
   const { inventoryView, setInventoryView } = useViewStore();
   const [params, setParams] = useSearchParams();
   const categoryId = params.get('categoryId') || '';
@@ -123,6 +124,17 @@ export default function InventoryPage() {
           </Button>
         }
       />
+
+      {isPremium && (
+        <div className="grid grid-cols-2 gap-2">
+          <Button to="/lists/scan?kind=PURCHASE" variant="soft" size="sm" className="w-full">
+            <Camera size={16} /> Scan restock
+          </Button>
+          <Button to="/reports#restock" variant="soft" size="sm" className="w-full">
+            <Boxes size={16} /> Restock ideas
+          </Button>
+        </div>
+      )}
 
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">

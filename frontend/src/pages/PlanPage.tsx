@@ -4,21 +4,23 @@ import {
   Boxes,
   Check,
   ImageIcon,
+  KeyRound,
   Receipt,
+  ScanLine,
   Smartphone,
   Sparkles,
   Users,
   Wallet,
 } from 'lucide-react';
-import { billingApi, businessApi, mpesaApi } from '../api';
+import { billingApi, mpesaApi } from '../api';
 import { Alert } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { FormFields } from '../components/ui/Form';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { PageHeader } from '../components/ui/PageHeader';
-import { Select } from '../components/ui/Select';
 import { Skeleton } from '../components/ui/Badge';
+import { PREMIUM_FEATURE_LINKS } from '../lib/premiumNav';
 import { formatCurrency, formatDate, getApiErrorMessage } from '../lib/utils';
 import { useAuthStore, useBusinessStore } from '../stores';
 
@@ -29,36 +31,22 @@ const FEATURE_ICONS: Record<string, typeof Sparkles> = {
   customers: Users,
   cash_up: Wallet,
   restock: Boxes,
+  list_ocr: ScanLine,
 };
 
 export default function PlanPage() {
   const queryClient = useQueryClient();
   const { user, loadProfile } = useAuthStore();
-  const { activeBusiness, setActiveBusiness, businesses, setBusinesses } = useBusinessStore();
+  const { activeBusiness } = useBusinessStore();
   const [phone, setPhone] = useState(user?.phone || '');
   const [renewOpen, setRenewOpen] = useState(false);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const [savedNote, setSavedNote] = useState('');
-  const [mpesaType, setMpesaType] = useState<'PAYBILL' | 'TILL'>('TILL');
-  const [shortCode, setShortCode] = useState('');
-  const [account, setAccount] = useState('');
-  const [consumerKey, setConsumerKey] = useState('');
-  const [consumerSecret, setConsumerSecret] = useState('');
-  const [passkey, setPasskey] = useState('');
 
   const { data: billing, isLoading } = useQuery({
     queryKey: ['billing', activeBusiness?.id],
     queryFn: () => billingApi.summary(activeBusiness?.id),
   });
-
-  useEffect(() => {
-    const mpesa = billing?.businessMpesa;
-    if (!mpesa) return;
-    if (mpesa.type) setMpesaType(mpesa.type);
-    setShortCode(mpesa.shortCode || '');
-    setAccount(mpesa.account || '');
-  }, [activeBusiness?.id, billing?.businessMpesa?.type, billing?.businessMpesa?.shortCode, billing?.businessMpesa?.account]);
 
   const paymentQuery = useQuery({
     queryKey: ['billing-payment', paymentId],
@@ -91,44 +79,6 @@ export default function PlanPage() {
     onError: (simulateError) => setError(getApiErrorMessage(simulateError, 'Could not update the sandbox payment.')),
   });
 
-  const saveMpesa = useMutation({
-    mutationFn: () => businessApi.update(activeBusiness!.id, {
-      mpesaType,
-      mpesaShortCode: shortCode.trim(),
-      mpesaAccount: account.trim(),
-      ...(consumerKey.trim() ? { mpesaConsumerKey: consumerKey.trim() } : {}),
-      ...(consumerSecret.trim() ? { mpesaConsumerSecret: consumerSecret.trim() } : {}),
-      ...(passkey.trim() ? { mpesaPasskey: passkey.trim() } : {}),
-    }),
-    onSuccess: (updated) => {
-      setError('');
-      setSavedNote('Saved');
-      setConsumerKey('');
-      setConsumerSecret('');
-      setPasskey('');
-      setActiveBusiness(updated);
-      setBusinesses(businesses.map((business) => (business.id === updated.id ? updated : business)));
-      queryClient.invalidateQueries({ queryKey: ['billing'] });
-    },
-    onError: (saveError) => setError(getApiErrorMessage(saveError, 'Could not save the M-Pesa details.')),
-  });
-
-  const clearMpesa = useMutation({
-    mutationFn: () => businessApi.update(activeBusiness!.id, { clearMpesaCredentials: true }),
-    onSuccess: (updated) => {
-      setShortCode('');
-      setAccount('');
-      setConsumerKey('');
-      setConsumerSecret('');
-      setPasskey('');
-      setSavedNote('');
-      setActiveBusiness(updated);
-      setBusinesses(businesses.map((business) => (business.id === updated.id ? updated : business)));
-      queryClient.invalidateQueries({ queryKey: ['billing'] });
-    },
-    onError: (clearError) => setError(getApiErrorMessage(clearError, 'Could not clear the M-Pesa details.')),
-  });
-
   const price = billing ? formatCurrency(billing.priceKes, 'KES') : 'KES 999';
   const prompt = paymentQuery.data?.prompt;
   const waiting = prompt?.status === 'PENDING';
@@ -137,7 +87,7 @@ export default function PlanPage() {
 
   return (
     <div className="page-stack">
-      <PageHeader title="Premium" />
+      <PageHeader title="Premium" subtitle="Billing and what Premium unlocks" />
 
       {error && <Alert variant="error">{error}</Alert>}
 
@@ -221,6 +171,25 @@ export default function PlanPage() {
         </Card>
       )}
 
+      {billing?.isPremium && (
+        <Card className="flex items-center justify-between gap-3 !p-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-900/25">
+              <KeyRound size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-body-medium font-semibold">Shop configurations</p>
+              <p className="text-caption text-slate-500 mt-0.5">
+                Daraja {mpesaReady ? 'connected' : 'not set'} · Gemini & photo keys
+              </p>
+            </div>
+          </div>
+          <Button to="/settings/configurations" size="sm" variant="soft">
+            Open
+          </Button>
+        </Card>
+      )}
+
       <section className="space-y-2">
         <h3 className="text-heading text-slate-500 px-1">Included</h3>
         <Card className="!p-0 overflow-hidden">
@@ -238,6 +207,16 @@ export default function PlanPage() {
                   <div className="min-w-0">
                     <p className="text-body-medium font-semibold">{feature.name}</p>
                     <p className="text-caption text-slate-500 mt-0.5">{feature.description}</p>
+                    {PREMIUM_FEATURE_LINKS[feature.id] && (
+                      <Button
+                        to={PREMIUM_FEATURE_LINKS[feature.id].to}
+                        size="sm"
+                        variant="soft"
+                        className="mt-2"
+                      >
+                        {PREMIUM_FEATURE_LINKS[feature.id].label}
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
@@ -246,88 +225,6 @@ export default function PlanPage() {
           {isLoading && <Skeleton className="h-24 rounded-none" />}
         </Card>
       </section>
-
-      {billing?.isPremium && activeBusiness && (
-        <Card className="!p-0 overflow-hidden">
-          <div className="flex items-start justify-between gap-3 px-4 py-4 sm:px-5 border-b border-slate-100 dark:border-slate-800">
-            <div className="min-w-0">
-              <h3 className="text-heading">Customer payments</h3>
-            </div>
-            <span className={`text-micro px-2 py-0.5 rounded-full shrink-0 ${mpesaReady ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800'}`}>
-              {mpesaReady ? 'Connected' : 'Not set'}
-            </span>
-          </div>
-
-          <FormFields busy={saveMpesa.isPending || clearMpesa.isPending} className="p-4 sm:p-5 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Select
-                label="Account type"
-                options={[
-                  { value: 'TILL', label: 'Buy Goods till' },
-                  { value: 'PAYBILL', label: 'Paybill' },
-                ]}
-                value={mpesaType}
-                onChange={(event) => setMpesaType(event.target.value as 'PAYBILL' | 'TILL')}
-              />
-              <Input
-                label={mpesaType === 'TILL' ? 'Till number' : 'Paybill number'}
-                value={shortCode}
-                onChange={(event) => setShortCode(event.target.value)}
-              />
-              {mpesaType === 'PAYBILL' && (
-                <Input
-                  label="Account number"
-                  value={account}
-                  onChange={(event) => setAccount(event.target.value)}
-                  placeholder="Shown on the receipt"
-                />
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Input
-                label="Consumer key"
-                value={consumerKey}
-                onChange={(event) => setConsumerKey(event.target.value)}
-                placeholder={mpesaReady ? 'Saved' : 'Daraja'}
-                autoComplete="off"
-              />
-              <Input
-                label="Consumer secret"
-                type="password"
-                value={consumerSecret}
-                onChange={(event) => setConsumerSecret(event.target.value)}
-                placeholder={mpesaReady ? 'Saved' : 'Daraja'}
-                autoComplete="new-password"
-              />
-              <Input
-                label="Passkey"
-                type="password"
-                value={passkey}
-                onChange={(event) => setPasskey(event.target.value)}
-                placeholder={mpesaReady ? 'Saved' : 'Daraja'}
-                autoComplete="new-password"
-              />
-            </div>
-
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-caption text-slate-500">
-                {savedNote || (billing.simulate && !mpesaReady ? 'Sandbox prompts work before this is saved.' : 'Leave the keys blank to keep the saved ones.')}
-              </p>
-              <div className="flex gap-2 sm:justify-end">
-                {mpesaReady && (
-                  <Button variant="ghost" loading={clearMpesa.isPending} onClick={() => clearMpesa.mutate()}>
-                    Remove
-                  </Button>
-                )}
-                <Button loading={saveMpesa.isPending} onClick={() => saveMpesa.mutate()}>
-                  Save
-                </Button>
-              </div>
-            </div>
-          </FormFields>
-        </Card>
-      )}
     </div>
   );
 }

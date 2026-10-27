@@ -2,13 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { Plus, X, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Form } from '../components/ui/Form';
 import { Input } from '../components/ui/Input';
-import { Select } from '../components/ui/Select';
 import { Alert } from '../components/ui/Alert';
 import { PageHeader, FormSection, StatusBar } from '../components/ui/PageHeader';
 import {
@@ -17,8 +16,10 @@ import {
   revokePreviews,
   type ImagePreview,
 } from '../components/ui/ImageUploadPreview';
-import { BackgroundRemovalOption } from '../components/billing/PremiumNotice';
-import { productApi, categoryApi, supplierApi } from '../api';
+import { BackgroundRemovalAsk } from '../components/ui/BackgroundRemovalAsk';
+import { CategorySelect } from '../components/forms/CategorySelect';
+import { SupplierSelect } from '../components/forms/SupplierSelect';
+import { productApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
 import { useBusinessStore } from '../stores';
 import { getApiErrorMessage } from '../lib/utils';
@@ -68,24 +69,13 @@ export default function NewProductPage() {
   const { activeBusiness } = useBusinessStore();
   const [hasVariants, setHasVariants] = useState(false);
   const [images, setImages] = useState<File[]>([]);
-  const [removeBackground, setRemoveBackground] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([]);
+  const [askPreviews, setAskPreviews] = useState<ImagePreview[]>([]);
+  const [processingPhotos, setProcessingPhotos] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const { data: suppliers } = useQuery({
-    queryKey: ['suppliers', activeBusiness?.id],
-    queryFn: () => supplierApi.list(activeBusiness!.id),
-    enabled: !!activeBusiness?.id,
-  });
-
-  const { data: categories } = useQuery({
-    queryKey: ['categories', activeBusiness?.id],
-    queryFn: () => categoryApi.list(activeBusiness!.id),
-    enabled: !!activeBusiness?.id,
-  });
-
-  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, control, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(productSchema) as never,
     defaultValues: {
       name: '', brand: '', description: '', categoryId: '', supplierId: '', buyingPrice: 0, sellingPrice: 0, quantity: 0,
@@ -93,17 +83,51 @@ export default function NewProductPage() {
     },
   });
 
+  const categoryId = watch('categoryId') || '';
+  const supplierId = watch('supplierId') || '';
+
   const { fields, append, remove } = useFieldArray({ control, name: 'variants' });
 
   const previewsRef = useRef(imagePreviews);
   previewsRef.current = imagePreviews;
+  const askRef = useRef(askPreviews);
+  askRef.current = askPreviews;
 
-  useEffect(() => () => revokePreviews(previewsRef.current), []);
+  useEffect(
+    () => () => {
+      revokePreviews(previewsRef.current);
+      revokePreviews(askRef.current);
+    },
+    []
+  );
 
-  const handleAddImages = (files: File[]) => {
-    const previews = createPreviews(files);
-    setImages((prev) => [...prev, ...files]);
-    setImagePreviews((prev) => [...prev, ...previews]);
+  const clearAsk = () => {
+    revokePreviews(askPreviews);
+    setAskPreviews([]);
+  };
+
+  const handlePickImages = (files: File[]) => {
+    revokePreviews(askPreviews);
+    setAskPreviews(createPreviews(files));
+  };
+
+  const commitPhotos = async (removeBackground: boolean) => {
+    if (!askPreviews.length) return;
+    setProcessingPhotos(true);
+    try {
+      const selected = askPreviews.map((preview) => preview.file);
+      const files = removeBackground
+        ? await Promise.all(selected.map((file) => productApi.removeBackground(file, activeBusiness!.id)))
+        : selected;
+      const nextPreviews = createPreviews(files);
+      setImages((prev) => [...prev, ...files]);
+      setImagePreviews((prev) => [...prev, ...nextPreviews]);
+      clearAsk();
+    } catch (error) {
+      setSaveError(getApiErrorMessage(error, 'Could not process those photos.'));
+    } finally {
+      setProcessingPhotos(false);
+    }
   };
 
   const handleRemoveImage = (index: number) => {
@@ -136,10 +160,7 @@ export default function NewProductPage() {
       };
       const product = await productApi.create(payload);
       if (images.length > 0) {
-        const files = removeBackground
-          ? await Promise.all(images.map((file) => productApi.removeBackground(file)))
-          : images;
-        await productApi.uploadImages(product.id, activeBusiness!.id, files);
+        await productApi.uploadImages(product.id, activeBusiness!.id, images);
       }
       return product;
     },
@@ -196,17 +217,13 @@ export default function NewProductPage() {
           <Input label="Product Name" placeholder="e.g. Running Shoes" error={errors.name?.message} {...register('name')} />
           <Input label="Brand" placeholder="Optional" {...register('brand')} />
           <Input label="Description" placeholder="Optional details" {...register('description')} />
-          {categories && categories.length > 0 && (
-            <Select
-              label="Category"
-              options={[{ value: '', label: 'Select category' }, ...categories.map((c) => ({ value: c.id, label: c.name }))]}
-              {...register('categoryId')}
-            />
-          )}
-          <Select
-            label="Supplier"
-            options={[{ value: '', label: suppliers?.length ? 'Select supplier' : 'No suppliers yet' }, ...(suppliers ?? []).map((s) => ({ value: s.id, label: s.name }))]}
-            {...register('supplierId')}
+          <CategorySelect
+            value={categoryId}
+            onChange={(next) => setValue('categoryId', next, { shouldDirty: true })}
+          />
+          <SupplierSelect
+            value={supplierId}
+            onChange={(next) => setValue('supplierId', next, { shouldDirty: true })}
           />
         </FormSection>
 
@@ -220,10 +237,17 @@ export default function NewProductPage() {
         <FormSection title="Photos">
           <ImageUploadPreview
             previews={imagePreviews}
-            onAdd={handleAddImages}
+            onAdd={handlePickImages}
             onRemove={handleRemoveImage}
           />
-          <BackgroundRemovalOption checked={removeBackground} onChange={setRemoveBackground} />
+          <BackgroundRemovalAsk
+            open={askPreviews.length > 0}
+            previews={askPreviews}
+            busy={processingPhotos}
+            onKeep={() => commitPhotos(false)}
+            onRemove={() => commitPhotos(true)}
+            onCancel={clearAsk}
+          />
         </FormSection>
 
         <div className="surface-card p-4 flex items-center gap-3">

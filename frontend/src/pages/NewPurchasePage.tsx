@@ -1,19 +1,20 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Plus, X, Package } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Camera, Plus, X, Package } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Form } from '../components/ui/Form';
 import { Input } from '../components/ui/Input';
-import { Select } from '../components/ui/Select';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { PageHeader, FormSection } from '../components/ui/PageHeader';
 import { ProductSearchBox } from '../components/products/ProductSearchBox';
-import { purchaseApi, supplierApi } from '../api';
+import { SupplierSelect } from '../components/forms/SupplierSelect';
+import { purchaseApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
-import { useBusinessStore } from '../stores';
+import { takeScannedPurchaseDraft } from '../lib/scannedList';
+import { useBusinessStore, usePremium } from '../stores';
 import { formatCurrency, getApiErrorMessage } from '../lib/utils';
 import type { Product } from '../types';
 
@@ -47,19 +48,15 @@ export default function NewPurchasePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { activeBusiness } = useBusinessStore();
+  const isPremium = usePremium();
   const [saveError, setSaveError] = useState('');
   const [search, setSearch] = useState('');
   const [showOptional, setShowOptional] = useState(false);
+  const scannedLoaded = useRef(false);
 
   const currency = activeBusiness?.currency || 'USD';
 
-  const { data: suppliers } = useQuery({
-    queryKey: ['suppliers', activeBusiness?.id],
-    queryFn: () => supplierApi.list(activeBusiness!.id),
-    enabled: !!activeBusiness?.id,
-  });
-
-  const { register, handleSubmit, control, watch } = useForm<FormData>({
+  const { register, handleSubmit, control, watch, reset, setValue } = useForm<FormData>({
     defaultValues: {
       purchaseDate: new Date().toISOString().split('T')[0],
       supplierId: '',
@@ -69,8 +66,29 @@ export default function NewPurchasePage() {
     },
   });
 
+  const supplierId = watch('supplierId') || '';
+
   const { fields, append, remove, update } = useFieldArray({ control, name: 'items' });
   const items = watch('items');
+
+  useEffect(() => {
+    if (scannedLoaded.current || fields.length > 0) return;
+    const draft = takeScannedPurchaseDraft();
+    if (!draft?.length) return;
+    scannedLoaded.current = true;
+    reset({
+      purchaseDate: new Date().toISOString().split('T')[0],
+      supplierId: '',
+      receiptNumber: '',
+      notes: 'Imported from scanned list',
+      items: draft.map((item) => ({
+        name: item.name,
+        quantity: Math.max(1, Math.round(item.quantity) || 1),
+        unitCost: Math.max(0, Math.round(item.unitCost) || 0),
+        ...(item.productId ? { productId: item.productId } : {}),
+      })),
+    });
+  }, [fields.length, reset]);
   const totalCost = items.reduce(
     (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitCost) || 0),
     0
@@ -168,6 +186,12 @@ export default function NewPurchasePage() {
 
       <PageHeader title="Record Purchase" subtitle="Add units to products you already created" />
 
+      {isPremium && (
+        <Button to="/lists/scan?kind=PURCHASE" variant="soft" size="sm" className="w-full">
+          <Camera size={16} /> Scan a handwritten purchase list
+        </Button>
+      )}
+
       <Form busy={mutation.isPending} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {saveError && <Alert variant="error">{saveError}</Alert>}
 
@@ -175,20 +199,11 @@ export default function NewPurchasePage() {
           <StepBadge step={1} label="Purchase details" />
           <Input label="Purchase date" type="date" {...register('purchaseDate', { required: true })} />
 
-          {suppliers && suppliers.length > 0 ? (
-            <Select
-              label="Supplier (optional)"
-              options={[{ value: '', label: 'No supplier selected' }, ...suppliers.map((s) => ({ value: s.id, label: s.name }))]}
-              {...register('supplierId')}
-            />
-          ) : (
-            <p className="text-caption text-slate-500">
-              No suppliers yet.{' '}
-              <Link to="/suppliers" className="text-primary-600 font-semibold hover:underline">
-                Add a supplier
-              </Link>
-            </p>
-          )}
+          <SupplierSelect
+            label="Supplier (optional)"
+            value={supplierId}
+            onChange={(next) => setValue('supplierId', next, { shouldDirty: true })}
+          />
 
           <button
             type="button"

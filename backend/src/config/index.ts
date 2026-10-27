@@ -31,6 +31,9 @@ export const config = {
     periodDays: positiveNumber(process.env.PREMIUM_PERIOD_DAYS, 30),
   },
   removeBgApiKey: process.env.REMOVEBG_API_KEY || '',
+  /** Google AI Studio key for reading handwritten / photo lists (https://aistudio.google.com/apikey) */
+  geminiApiKey: process.env.GEMINI_API_KEY || '',
+  geminiModel: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
   superAdmin: {
     email: process.env.SUPER_ADMIN_EMAIL || 'admin@voki.local',
     password: process.env.SUPER_ADMIN_PASSWORD || 'VokiAdmin2026',

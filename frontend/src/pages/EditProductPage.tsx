@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Form } from '../components/ui/Form';
 import { Input } from '../components/ui/Input';
-import { Select } from '../components/ui/Select';
 import { Alert } from '../components/ui/Alert';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Skeleton } from '../components/ui/Badge';
-import { productApi, categoryApi, supplierApi } from '../api';
+import { CategorySelect } from '../components/forms/CategorySelect';
+import { SupplierSelect } from '../components/forms/SupplierSelect';
+import { productApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
 import { useBusinessStore } from '../stores';
 import { getApiErrorMessage } from '../lib/utils';
@@ -35,17 +36,6 @@ export default function EditProductPage() {
     queryFn: () => productApi.get(id!, activeBusiness!.id),
     enabled: !!id && !!activeBusiness?.id,
   });
-  const { data: categories } = useQuery({
-    queryKey: ['categories', activeBusiness?.id],
-    queryFn: () => categoryApi.list(activeBusiness!.id),
-    enabled: !!activeBusiness?.id,
-  });
-  const { data: suppliers } = useQuery({
-    queryKey: ['suppliers', activeBusiness?.id],
-    queryFn: () => supplierApi.list(activeBusiness!.id),
-    enabled: !!activeBusiness?.id,
-  });
-
   useEffect(() => {
     if (!product) return;
     setForm({
@@ -103,27 +93,18 @@ export default function EditProductPage() {
         <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         <Input label="Brand" value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} />
         <Input label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        <Select
-          label="Category"
+        <CategorySelect
           value={form.categoryId}
-          onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-          options={[{ value: '', label: 'No category' }, ...(categories ?? []).map((category) => ({ value: category.id, label: category.name }))]}
+          onChange={(categoryId) => setForm({ ...form, categoryId })}
         />
-        <Select
-          label="Supplier"
+        <SupplierSelect
           value={form.supplierId}
-          onChange={(e) => setForm({ ...form, supplierId: e.target.value })}
-          options={[{ value: '', label: 'No supplier' }, ...(suppliers ?? []).map((supplier) => ({ value: supplier.id, label: supplier.name }))]}
+          onChange={(supplierId) => setForm({ ...form, supplierId })}
         />
         <div className="grid grid-cols-2 gap-3">
           <Input label="Buy price" type="number" min={0} step={1} value={form.buyingPrice} onChange={(e) => setForm({ ...form, buyingPrice: e.target.value })} />
           <Input label="Sell price" type="number" min={0} step={1} value={form.sellingPrice} onChange={(e) => setForm({ ...form, sellingPrice: e.target.value })} />
         </div>
-        <p className="text-xs text-slate-500">
-          <Link to="/suppliers" className="font-semibold text-primary-600">Suppliers</Link>
-          {' · '}
-          <Link to="/categories" className="font-semibold text-primary-600">Categories</Link>
-        </p>
         <Button type="submit" className="w-full" loading={mutation.isPending}>Save changes</Button>
       </Form>
     </div>

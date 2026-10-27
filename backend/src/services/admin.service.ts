@@ -202,6 +202,7 @@ export const adminService = {
     const query = search?.trim();
     const users = await prisma.user.findMany({
       where: {
+        role: { not: 'SUPER_ADMIN' },
         ...(query
           ? {
             OR: [
@@ -285,7 +286,7 @@ export const adminService = {
       prisma.$queryRaw<Array<{ day: Date | string; count: bigint | number }>>`
         SELECT DATE(createdAt) AS day, COUNT(*) AS count
         FROM users
-        WHERE createdAt >= ${start}
+        WHERE createdAt >= ${start} AND role <> 'SUPER_ADMIN'
         GROUP BY DATE(createdAt)
         ORDER BY day
       `,
@@ -309,8 +310,10 @@ export const adminService = {
       }),
     ]);
 
-    const suspended = await prisma.user.count({ where: { deletedAt: { not: null } } });
-    const premium = users.filter((user) => premiumActive(user)).length;
+    const suspended = await prisma.user.count({ where: { deletedAt: { not: null }, role: { not: 'SUPER_ADMIN' } } });
+    const admins = users.filter((user) => user.role === 'SUPER_ADMIN').length;
+    const subscribers = users.filter((user) => user.role !== 'SUPER_ADMIN');
+    const premium = subscribers.filter((user) => premiumActive(user)).length;
     const signupCounts = new Map(signupRows.map((row) => [dayKey(row.day), Number(row.count)]));
     const salesByDay = new Map(salesRows.map((row) => [dayKey(row.day), row]));
 
@@ -325,13 +328,13 @@ export const adminService = {
 
     return {
       accounts: {
-        total: users.length + suspended,
-        active: users.length,
+        total: subscribers.length + suspended,
+        active: subscribers.length,
         suspended,
         premium,
-        free: users.length - premium,
-        admins: users.filter((user) => user.role === 'SUPER_ADMIN').length,
-        newThisMonth: users.filter((user) => user.createdAt >= startOfMonth).length,
+        free: subscribers.length - premium,
+        admins,
+        newThisMonth: subscribers.filter((user) => user.createdAt >= startOfMonth).length,
       },
       businesses,
       products,
@@ -403,6 +406,7 @@ export const adminService = {
 
   async setPlan(actorId: string, userId: string, input: { plan: 'FREE' | 'PREMIUM'; days?: number }) {
     const user = await loadUser(userId);
+    if (user.role === 'SUPER_ADMIN') throw new ValidationError('Super admin accounts are management accounts and have no plan.');
     const pricing = await planService.pricing();
 
     if (input.plan === 'FREE') {

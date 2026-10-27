@@ -16,9 +16,9 @@ import {
   revokePreviews,
   type ImagePreview,
 } from '../components/ui/ImageUploadPreview';
+import { BackgroundRemovalAsk } from '../components/ui/BackgroundRemovalAsk';
 import { formatCurrency, getApiErrorMessage, isProductOutOfStock } from '../lib/utils';
 import { ProfitAmount } from '../components/ui/ProfitAmount';
-import { BackgroundRemovalOption } from '../components/billing/PremiumNotice';
 import { productApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
 import { useBusinessStore } from '../stores';
@@ -30,12 +30,11 @@ export default function ProductDetailPage() {
   const { activeBusiness } = useBusinessStore();
   const [uploading, setUploading] = useState(false);
   const [actionError, setActionError] = useState('');
-  const [pendingPreviews, setPendingPreviews] = useState<ImagePreview[]>([]);
-  const [removeBackground, setRemoveBackground] = useState(false);
-  const previewsRef = useRef(pendingPreviews);
-  previewsRef.current = pendingPreviews;
+  const [askPreviews, setAskPreviews] = useState<ImagePreview[]>([]);
+  const askRef = useRef(askPreviews);
+  askRef.current = askPreviews;
 
-  useEffect(() => () => revokePreviews(previewsRef.current), []);
+  useEffect(() => () => revokePreviews(askRef.current), []);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', id, activeBusiness?.id],
@@ -53,29 +52,26 @@ export default function ProductDetailPage() {
     onError: (error) => setActionError(getApiErrorMessage(error, 'Could not delete this product.')),
   });
 
-  const handleAddPending = (files: File[]) => {
-    setPendingPreviews((prev) => [...prev, ...createPreviews(files)]);
+  const clearAsk = () => {
+    revokePreviews(askPreviews);
+    setAskPreviews([]);
   };
 
-  const handleRemovePending = (index: number) => {
-    setPendingPreviews((prev) => {
-      const removed = prev[index];
-      if (removed) URL.revokeObjectURL(removed.url);
-      return prev.filter((_, i) => i !== index);
-    });
+  const handlePickPhotos = (files: File[]) => {
+    revokePreviews(askPreviews);
+    setAskPreviews(createPreviews(files));
   };
 
-  const handleUploadPending = async () => {
-    if (!pendingPreviews.length || !activeBusiness) return;
+  const finishUpload = async (removeBackground: boolean) => {
+    if (!askPreviews.length || !activeBusiness || !id) return;
     setUploading(true);
     try {
-      const selected = pendingPreviews.map((preview) => preview.file);
+      const selected = askPreviews.map((preview) => preview.file);
       const files = removeBackground
-        ? await Promise.all(selected.map((file) => productApi.removeBackground(file)))
+        ? await Promise.all(selected.map((file) => productApi.removeBackground(file, activeBusiness.id)))
         : selected;
-      await productApi.uploadImages(id!, activeBusiness.id, files);
-      revokePreviews(pendingPreviews);
-      setPendingPreviews([]);
+      await productApi.uploadImages(id, activeBusiness.id, files);
+      clearAsk();
       setActionError('');
       refreshCommerce(queryClient);
     } catch (error) {
@@ -117,21 +113,24 @@ export default function ProductDetailPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-[16rem_minmax(0,1fr)] lg:grid-cols-[18rem_minmax(0,1fr)] gap-4 items-start">
         <div className="min-w-0 space-y-2">
-          <ImageGallery images={product.images} alt={product.name} compact />
-          <FormFields busy={uploading} className="space-y-2">
+          <FormFields busy={uploading}>
             <ImageUploadPreview
               compact
-              previews={pendingPreviews}
-              onAdd={handleAddPending}
-              onRemove={handleRemovePending}
+              addOnly
+              previews={[]}
+              onAdd={handlePickPhotos}
+              onRemove={() => undefined}
             />
-            <BackgroundRemovalOption checked={removeBackground} onChange={setRemoveBackground} />
-            {pendingPreviews.length > 0 && (
-              <Button className="w-full" size="sm" onClick={handleUploadPending} loading={uploading}>
-                Upload {pendingPreviews.length}
-              </Button>
-            )}
           </FormFields>
+          <ImageGallery images={product.images} alt={product.name} compact />
+          <BackgroundRemovalAsk
+            open={askPreviews.length > 0}
+            previews={askPreviews}
+            busy={uploading}
+            onKeep={() => finishUpload(false)}
+            onRemove={() => finishUpload(true)}
+            onCancel={clearAsk}
+          />
         </div>
 
         <div className="min-w-0 space-y-3">

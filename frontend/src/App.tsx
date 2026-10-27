@@ -47,6 +47,8 @@ import {
 } from './pages/AdminBrowsePage';
 import CustomersPage from './pages/CustomersPage';
 import ReceiptPage from './pages/ReceiptPage';
+import ScanListPage from './pages/ScanListPage';
+import ConfigurationsPage from './pages/ConfigurationsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 
@@ -160,6 +162,8 @@ export default function App() {
             <Route path="/suppliers" element={<ProtectedRoute><ShopOrAdmin to="/admin/suppliers"><SuppliersPage /></ShopOrAdmin></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><ShopOrAdmin to="/admin/issues"><NotificationsPage /></ShopOrAdmin></ProtectedRoute>} />
             <Route path="/plan" element={<ProtectedRoute><ShopOrAdmin to="/admin/pricing"><PlanPage /></ShopOrAdmin></ProtectedRoute>} />
+            <Route path="/settings/configurations" element={<ProtectedRoute><ShopOrAdmin to="/admin"><ConfigurationsPage /></ShopOrAdmin></ProtectedRoute>} />
+            <Route path="/lists/scan" element={<ProtectedRoute><ShopOrAdmin to="/admin"><ScanListPage /></ShopOrAdmin></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
             <Route path="/admin/subscribers/:id" element={<ProtectedRoute><AdminSubscriberPage /></ProtectedRoute>} />
             <Route path="/admin/subscribers" element={<ProtectedRoute><AdminSubscribersPage /></ProtectedRoute>} />

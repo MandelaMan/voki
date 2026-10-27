@@ -19,9 +19,13 @@ import {
   billingController,
   customerController,
   imageController,
+  integrationController,
+  listOcrController,
+  listOcrLimiter,
   mpesaController,
   removeBackgroundLimiter,
 } from '../controllers/premium.controller';
+import { updateIntegrationsSchema } from '../validators/integration.validator';
 import { adminController } from '../controllers/admin.controller';
 import {
   registerSchema,
@@ -100,7 +104,17 @@ router.post(
   uploadSingleImage.single('image'),
   imageController.removeBackground
 );
+router.post(
+  '/ocr/list',
+  authenticate,
+  requirePremium,
+  listOcrLimiter,
+  uploadSingleImage.single('image'),
+  listOcrController.scan
+);
 router.get('/customers', authenticate, requirePremium, customerController.list);
+router.get('/integrations', authenticate, integrationController.summary);
+router.put('/integrations', authenticate, validate(updateIntegrationsSchema), integrationController.update);
 
 router.get('/admin', authenticate, requireSuperAdmin, adminController.overview);
 router.get('/admin/analytics', authenticate, requireSuperAdmin, adminController.analytics);

@@ -32,6 +32,34 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
+type RetryConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+  _networkRetry?: number;
+};
+
+const NETWORK_RETRY_MAX = 6;
+const NETWORK_RETRY_BASE_MS = 400;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isCredentialRequest(url = '') {
+  return /\/auth\/(login|register|refresh|forgot-password|reset-password)(?:\?|$)/.test(url);
+}
+
+function isTransientNetworkError(error: AxiosError) {
+  if (error.response) return false;
+  return (
+    error.code === 'ERR_NETWORK' ||
+    error.code === 'ECONNREFUSED' ||
+    error.code === 'ECONNRESET' ||
+    error.code === 'ETIMEDOUT' ||
+    error.code === 'ECONNABORTED' ||
+    error.message === 'Network Error'
+  );
+}
+
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
 
@@ -46,12 +74,27 @@ const processQueue = (error: unknown, token: string | null = null) => {
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as RetryConfig | undefined;
+    if (!originalRequest) return Promise.reject(error);
 
-    const requestUrl = originalRequest?.url || '';
-    const isCredentialRequest = /\/auth\/(login|register|refresh|forgot-password|reset-password)(?:\?|$)/.test(requestUrl);
+    const requestUrl = originalRequest.url || '';
 
-    if (error.response?.status === 401 && !originalRequest._retry && refreshToken && !isCredentialRequest) {
+    // Backend often isn't listening yet during cold start / hot reload.
+    if (isTransientNetworkError(error)) {
+      const attempt = originalRequest._networkRetry || 0;
+      if (attempt < NETWORK_RETRY_MAX) {
+        originalRequest._networkRetry = attempt + 1;
+        await sleep(NETWORK_RETRY_BASE_MS * (attempt + 1));
+        return api(originalRequest);
+      }
+    }
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      refreshToken &&
+      !isCredentialRequest(requestUrl)
+    ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });

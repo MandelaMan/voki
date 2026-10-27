@@ -40,7 +40,7 @@ export default function AdminSubscriberPage() {
       <Card className="space-y-1">
         <p className="text-caption text-slate-500">{account.phone || 'No phone on the account'}</p>
         <p className="text-caption text-slate-500">
-          {account.suspended ? 'Suspended' : account.isPremium ? `Premium until ${formatDate(account.planExpiresAt || '')}` : 'Free plan'}
+          {account.role === 'SUPER_ADMIN' ? 'Management account' : account.suspended ? 'Suspended' : account.isPremium ? `Premium until ${formatDate(account.planExpiresAt || '')}` : 'Free plan'}
           {account.businesses.length ? ` · ${account.businesses.map((business) => business.name).join(', ')}` : ' · No shop yet'}
         </p>
       </Card>

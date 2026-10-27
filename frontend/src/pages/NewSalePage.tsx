@@ -1,18 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Minus, Plus } from 'lucide-react';
+import { Camera, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { Select } from '../components/ui/Select';
-import { PageHeader } from '../components/ui/PageHeader';
+import { PageHeader, ListRow } from '../components/ui/PageHeader';
+import { Skeleton } from '../components/ui/Badge';
 import { Alert } from '../components/ui/Alert';
 import { FormFields } from '../components/ui/Form';
 import { ProductSearchBox } from '../components/products/ProductSearchBox';
-import { formatCurrency, getApiErrorMessage, getFirstInStockVariant, getImageUrl, isProductOutOfStock } from '../lib/utils';
+import { CustomerSelect } from '../components/forms/CustomerSelect';
+import { formatCurrency, formatRelative, getApiErrorMessage, getFirstInStockVariant, getImageUrl, isProductOutOfStock } from '../lib/utils';
 import { productApi, saleApi } from '../api';
 import { refreshCommerce } from '../lib/refresh';
+import { takeScannedSaleDraft } from '../lib/scannedList';
 import { useBusinessStore, usePremium } from '../stores';
 import { offlineQueue } from '../lib/offline';
 import { businessPaymentMethods, PAYMENT_METHOD_OPTIONS, type PaymentMethod } from '../lib/payments';
@@ -59,6 +62,7 @@ export default function NewSalePage() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [promptMpesa, setPromptMpesa] = useState(true);
   const [stockError, setStockError] = useState('');
+  const scannedLoaded = useRef(false);
 
   const { data: preselectedProduct } = useQuery({
     queryKey: ['product', searchParams.get('productId'), activeBusiness?.id],
@@ -66,29 +70,49 @@ export default function NewSalePage() {
     enabled: !!searchParams.get('productId') && !!activeBusiness?.id,
   });
 
+  const { data: recentSalesData, isLoading: recentSalesLoading } = useQuery({
+    queryKey: ['sales', activeBusiness?.id, 'recent-for-sale'],
+    queryFn: () => saleApi.list({ businessId: activeBusiness!.id, limit: 20 }),
+    enabled: !!activeBusiness?.id && cart.length === 0,
+  });
+
+  const recentSoldItems = useMemo(() => {
+    const seen = new Set<string>();
+    const items: Array<{
+      key: string;
+      product: Product;
+      variant?: ProductVariant;
+      sellingPrice: number;
+      saleDate: string;
+    }> = [];
+
+    for (const sale of recentSalesData?.sales || []) {
+      for (const item of sale.items || []) {
+        if (!item.product) continue;
+        const key = `${item.productId}:${item.variantId || ''}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        items.push({
+          key,
+          product: item.product,
+          variant: item.variant,
+          sellingPrice: Math.round(Number(item.sellingPrice) || 0),
+          saleDate: sale.saleDate,
+        });
+        if (items.length >= 8) return items;
+      }
+    }
+
+    return items;
+  }, [recentSalesData]);
+
   useEffect(() => {
     if (!paymentMethods.includes(paymentMethod as PaymentMethod)) {
       setPaymentMethod(paymentMethods[0] || 'CASH');
     }
   }, [paymentMethod, paymentMethods]);
 
-  useEffect(() => {
-    if (!preselectedProduct || cart.length > 0) return;
-    if (isProductOutOfStock(preselectedProduct)) {
-      setStockError(`${preselectedProduct.name} is out of stock and cannot be sold.`);
-      return;
-    }
-    const variant = preselectedProduct.hasVariants && preselectedProduct.variants?.length
-      ? getFirstInStockVariant(preselectedProduct.variants)
-      : undefined;
-    if (preselectedProduct.hasVariants && !variant) {
-      setStockError(`${preselectedProduct.name} is out of stock and cannot be sold.`);
-      return;
-    }
-    addToCart(preselectedProduct, variant);
-  }, [preselectedProduct]);
-
-  const addToCart = (product: Product, variant?: ProductVariant) => {
+  const addToCart = (product: Product, variant?: ProductVariant, quantity = 1, soldAt?: number) => {
     setStockError('');
 
     if (product.hasVariants && product.variants?.length) {
@@ -111,25 +135,96 @@ export default function NewSalePage() {
     }
 
     const catalogPrice = Math.round(Number(variant?.sellingPrice || product.sellingPrice) || 0);
+    const sellingPrice = soldAt == null ? catalogPrice : Math.max(0, Math.round(soldAt));
+    const qty = Math.max(1, Math.round(quantity) || 1);
     const existing = cart.find(
       (c) => c.product.id === product.id && c.variant?.id === variant?.id
     );
 
     if (existing) {
+      const nextQty = existing.quantity + qty;
+      if (nextQty > stock) {
+        setStockError(`Only ${stock} unit${stock === 1 ? '' : 's'} available for ${product.name}${variant ? ` (${variant.variantValue})` : ''}.`);
+        return;
+      }
       setCart(cart.map((c) =>
-        c === existing ? { ...c, quantity: c.quantity + 1 } : c
+        c === existing ? { ...c, quantity: nextQty, sellingPrice } : c
       ));
     } else {
+      if (qty > stock) {
+        setStockError(`Only ${stock} unit${stock === 1 ? '' : 's'} available for ${product.name}${variant ? ` (${variant.variantValue})` : ''}.`);
+        return;
+      }
       setCart([...cart, {
         product,
         variant,
-        quantity: 1,
+        quantity: qty,
         catalogPrice,
-        sellingPrice: catalogPrice,
+        sellingPrice,
       }]);
     }
     setSearch('');
   };
+
+  useEffect(() => {
+    if (!preselectedProduct || cart.length > 0 || scannedLoaded.current) return;
+    if (isProductOutOfStock(preselectedProduct)) {
+      setStockError(`${preselectedProduct.name} is out of stock and cannot be sold.`);
+      return;
+    }
+    const variant = preselectedProduct.hasVariants && preselectedProduct.variants?.length
+      ? getFirstInStockVariant(preselectedProduct.variants)
+      : undefined;
+    if (preselectedProduct.hasVariants && !variant) {
+      setStockError(`${preselectedProduct.name} is out of stock and cannot be sold.`);
+      return;
+    }
+    addToCart(preselectedProduct, variant);
+  }, [preselectedProduct]);
+
+  useEffect(() => {
+    if (!activeBusiness?.id || scannedLoaded.current || cart.length > 0) return;
+    const draft = takeScannedSaleDraft();
+    if (!draft?.length) return;
+    scannedLoaded.current = true;
+
+    (async () => {
+      const next: CartItem[] = [];
+      const issues: string[] = [];
+      for (const item of draft) {
+        try {
+          const product = await productApi.get(item.productId, activeBusiness.id);
+          const variant = item.variantId
+            ? product.variants?.find((row) => row.id === item.variantId)
+            : product.hasVariants && product.variants?.length
+              ? getFirstInStockVariant(product.variants)
+              : undefined;
+          if (product.hasVariants && !variant) {
+            issues.push(`${product.name} needs a size/color with stock.`);
+            continue;
+          }
+          const stock = getItemStock(product, variant);
+          const quantity = Math.min(Math.max(1, item.quantity || 1), Math.max(stock, 0));
+          if (stock <= 0) {
+            issues.push(`${product.name} is out of stock.`);
+            continue;
+          }
+          const catalogPrice = Math.round(Number(variant?.sellingPrice || product.sellingPrice) || 0);
+          next.push({
+            product,
+            variant,
+            quantity,
+            catalogPrice,
+            sellingPrice: item.sellingPrice == null ? catalogPrice : Math.max(0, Math.round(item.sellingPrice)),
+          });
+        } catch {
+          issues.push('One scanned product could not be loaded.');
+        }
+      }
+      if (next.length) setCart(next);
+      if (issues.length) setStockError(issues.join(' '));
+    })();
+  }, [activeBusiness?.id]);
 
   const updateQuantity = (index: number, delta: number) => {
     setStockError('');
@@ -206,6 +301,10 @@ export default function NewSalePage() {
         navigate(`/sales/${result.id}`);
         return;
       }
+      if (!offline && result && 'id' in result && isPremium) {
+        navigate('/sales', { state: { printReceiptId: result.id } });
+        return;
+      }
       const productIds = [...new Set(cart.map((item) => item.product.id))];
       navigate(!offline && productIds.length === 1 ? `/inventory/${productIds[0]}` : '/sales');
     },
@@ -219,6 +318,17 @@ export default function NewSalePage() {
   return (
     <div className="page-stack">
       <PageHeader title="Record Sale" />
+
+      {isPremium && (
+        <div className="grid grid-cols-2 gap-2">
+          <Button to="/lists/scan?kind=SALE" variant="soft" size="sm" className="w-full">
+            <Camera size={16} /> Scan list
+          </Button>
+          <Button to="/customers" variant="soft" size="sm" className="w-full">
+            Customers
+          </Button>
+        </div>
+      )}
 
       {stockError && (
         <Alert variant="error">{stockError}</Alert>
@@ -272,7 +382,7 @@ export default function NewSalePage() {
                         List: {formatCurrency(item.catalogPrice, currency)}
                         <span className="ml-1.5">· {stock} available</span>
                         {hasDiscount && (
-                          <span className="text-emerald-600 font-medium ml-1.5">
+                          <span className="text-red-600 dark:text-red-400 font-medium ml-1.5">
                             −{formatCurrency(lineDiscount, currency)}
                           </span>
                         )}
@@ -318,21 +428,13 @@ export default function NewSalePage() {
               onChange={(e) => setPaymentMethod(e.target.value)}
             />
             {isPremium && (
-              <>
-                <Input
-                  label="Customer name"
-                  placeholder="Optional"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                />
-                <Input
-                  label="Customer phone"
-                  inputMode="tel"
-                  placeholder="07XX XXX XXX"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                />
-              </>
+              <CustomerSelect
+                value={{ name: customerName, phone: customerPhone }}
+                onChange={(next) => {
+                  setCustomerName(next.name);
+                  setCustomerPhone(next.phone);
+                }}
+              />
             )}
             {isPremium && paymentMethod === 'MPESA' && isOnline && (
               <label className="flex items-start gap-2 text-caption cursor-pointer">
@@ -360,7 +462,7 @@ export default function NewSalePage() {
               </div>
             )}
             {totalDiscount > 0 && (
-              <div className="flex items-center justify-between text-caption text-emerald-600 font-medium">
+              <div className="flex items-center justify-between text-caption text-red-600 dark:text-red-400 font-medium">
                 <span>Discount</span>
                 <span>−{formatCurrency(totalDiscount, currency)}</span>
               </div>
@@ -392,7 +494,46 @@ export default function NewSalePage() {
       )}
 
       {cart.length === 0 && (
-        <p className="text-center text-caption text-slate-500 py-8">Cart is empty</p>
+        <div className="space-y-4">
+          <p className="text-center text-caption text-slate-500 py-4">Cart is empty</p>
+
+          {recentSalesLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-16" />
+              ))}
+            </div>
+          ) : recentSoldItems.length > 0 ? (
+            <section>
+              <h3 className="text-heading mb-3">Recent sold items</h3>
+              <div className="space-y-2">
+                {recentSoldItems.map((item) => {
+                  const imageUrl = cartImage(item.product);
+                  const variantLabel = item.variant
+                    ? `${item.variant.variantType}: ${item.variant.variantValue}`
+                    : null;
+
+                  return (
+                    <ListRow
+                      key={item.key}
+                      thumbnail={imageUrl}
+                      thumbnailAlt={item.product.name}
+                      icon={<ShoppingBag size={18} />}
+                      title={item.product.name}
+                      subtitle={[variantLabel, formatRelative(item.saleDate)].filter(Boolean).join(' · ')}
+                      trailing={
+                        <p className="text-body-medium font-semibold text-primary-600">
+                          {formatCurrency(item.sellingPrice, currency)}
+                        </p>
+                      }
+                      onClick={() => addToCart(item.product, item.variant, 1, item.sellingPrice)}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+        </div>
       )}
     </div>
   );

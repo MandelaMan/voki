@@ -41,9 +41,15 @@ export function ProfitAmount({
         ? 'bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-300'
         : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400';
     return (
-      <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold leading-none', chip, className)}>
-        <span>{word}</span>
-        <span className="tabular-nums">{signed}</span>
+      <span
+        className={cn(
+          'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold leading-none tabular-nums',
+          chip,
+          className
+        )}
+        title={word}
+      >
+        {signed}
       </span>
     );
   }

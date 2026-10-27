@@ -64,11 +64,12 @@ function stepNumberInput(input: HTMLInputElement, direction: 1 | -1) {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, hint, icon, id, type, disabled, step, onChange, onKeyDown, onBeforeInput, ...props }, ref) => {
+  ({ className, label, error, hint, icon, id, type, disabled, step, inputMode, onChange, onKeyDown, onBeforeInput, onFocus, ...props }, ref) => {
     const innerRef = useRef<HTMLInputElement>(null);
     const [showPassword, setShowPassword] = useState(false);
     const isNumber = type === 'number';
     const isPassword = type === 'password';
+    const isNumericField = isNumber || inputMode === 'numeric' || inputMode === 'decimal';
     const inputType = isPassword && showPassword ? 'text' : type;
     const wholeNumber = isNumber && (step === undefined || Number.isInteger(Number(step)));
 
@@ -77,6 +78,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       if (!input || disabled) return;
       stepNumberInput(input, direction);
     }, [disabled]);
+
+    const handleSelectAllFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+      onFocus?.(event);
+      if (event.defaultPrevented || !isNumericField) return;
+      const target = event.currentTarget;
+      // Defer so mobile browsers still select after their focus handling.
+      requestAnimationFrame(() => {
+        if (document.activeElement === target) target.select();
+      });
+    };
 
     const handleNumberKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
       onKeyDown?.(event);
@@ -121,6 +132,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         id={id}
         type={inputType}
         disabled={disabled}
+        inputMode={inputMode}
         className={cn(
           'w-full py-2.5 border-0 bg-transparent text-slate-900 dark:text-slate-100',
           'placeholder:text-slate-400 dark:placeholder:text-slate-500 placeholder:font-normal',
@@ -136,6 +148,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         onChange={onChange}
         onKeyDown={onKeyDown}
         onBeforeInput={onBeforeInput}
+        onFocus={handleSelectAllFocus}
       />
     );
 
@@ -190,6 +203,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           onKeyDown={handleNumberKeyDown}
           onBeforeInput={handleNumberBeforeInput}
           onChange={handleNumberChange}
+          onFocus={handleSelectAllFocus}
         />
         <div className={cn(
           'absolute right-1.5 top-1.5 bottom-1.5 flex flex-col w-9 rounded-xl overflow-hidden',

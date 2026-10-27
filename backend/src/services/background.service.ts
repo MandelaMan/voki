@@ -1,13 +1,14 @@
-import { config } from '../config';
 import { AppError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { integrationService } from './integration.service';
 
 export const backgroundService = {
-  async remove(input: Buffer, filename: string) {
-    if (!config.removeBgApiKey) {
+  async remove(input: Buffer, filename: string, businessId?: string) {
+    const apiKey = await integrationService.resolveRemoveBgApiKey(businessId);
+    if (!apiKey) {
       throw new AppError(
         503,
-        'Background removal is not set up on this server yet.',
+        'Background removal needs a remove.bg API key. Add yours under Settings → Configurations.',
         'REMOVEBG_UNAVAILABLE'
       );
     }
@@ -19,7 +20,7 @@ export const backgroundService = {
 
     const response = await fetch('https://api.remove.bg/v1.0/removebg', {
       method: 'POST',
-      headers: { 'X-Api-Key': config.removeBgApiKey },
+      headers: { 'X-Api-Key': apiKey },
       body: form,
     });
 

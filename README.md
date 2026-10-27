@@ -17,6 +17,7 @@ Built for jewelry sellers, shoe shops, clothing boutiques, cosmetic stores, elec
 - **Reports** - Inventory, sales, profit, low stock, dead stock with CSV export
 - **Notifications** - Low stock, out of stock alerts (push-notification ready)
 - **PWA** - Installable, offline inventory viewing, offline sales queue with auto-sync
+- **Premium list scan** - Photograph a handwritten sales or restock list; Gemini reads it and fills the form
 - **Dark mode** - Light/dark theme support
 
 ## Tech Stack
@@ -108,6 +109,7 @@ JWT_SECRET="your-secret-key"
 JWT_REFRESH_SECRET="your-refresh-secret"
 PORT=3001
 FRONTEND_URL=http://localhost:5173
+GEMINI_API_KEY=                 # free key from https://aistudio.google.com/apikey (list scanning)
 ```
 
 ## API Overview

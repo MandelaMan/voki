@@ -189,7 +189,10 @@ function AccountActions({
   onDowngrade: () => void;
   onSuspend: () => void;
 }) {
-  const canSuspend = !self && account.role !== 'SUPER_ADMIN';
+  if (account.role === 'SUPER_ADMIN') {
+    return <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Management account</span>;
+  }
+  const canSuspend = !self;
   return (
     <div className="flex flex-col items-start gap-1.5">
           {confirming === 'downgrade' && (

@@ -206,6 +206,53 @@ export interface BillingSummary {
   } | null;
 }
 
+export type ListOcrKind = 'SALE' | 'PURCHASE';
+
+export interface ListOcrCandidate {
+  id: string;
+  name: string;
+  remainingQuantity: number;
+  sellingPrice: number;
+  buyingPrice: number;
+  hasVariants: boolean;
+}
+
+export interface ListOcrItem {
+  name: string;
+  quantity: number;
+  unitCost?: number | null;
+  sellingPrice?: number | null;
+  raw?: string | null;
+  productId?: string | null;
+  productName?: string | null;
+  variantId?: string | null;
+  variantLabel?: string | null;
+  matchConfidence: 'exact' | 'likely' | 'none';
+  candidates: ListOcrCandidate[];
+}
+
+export interface ListOcrResult {
+  kind: ListOcrKind;
+  engine: string;
+  model: string;
+  itemCount: number;
+  items: ListOcrItem[];
+}
+
+export interface ScannedSaleDraftItem {
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  sellingPrice?: number;
+}
+
+export interface ScannedPurchaseDraftItem {
+  name: string;
+  quantity: number;
+  unitCost: number;
+  productId?: string;
+}
+
 export interface AdminUser {
   id: string;
   email: string;
@@ -416,6 +463,20 @@ export interface Receipt {
     lineTotal: number;
   }>;
   total: number;
+}
+
+export interface ProfitReport {
+  summary: {
+    totalSales: number;
+    totalRevenue: number;
+    totalProfit: number;
+  };
+  byProduct: Array<{
+    product?: { id: string; name: string; sku: string } | null;
+    quantity: number | null;
+    revenue: number;
+    profit: number;
+  }>;
 }
 
 export interface CashUp {

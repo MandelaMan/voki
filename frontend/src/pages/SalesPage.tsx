@@ -1,15 +1,16 @@
-import { useDeferredValue, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDown, Plus, Search, ShoppingBag } from 'lucide-react';
+import { Camera, ChevronDown, Plus, ShoppingBag, Users } from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import { PageHeader, ListRow } from '../components/ui/PageHeader';
+import { PageHeader, ListRow, FilterTabs, SearchInput } from '../components/ui/PageHeader';
 import { Skeleton, EmptyState } from '../components/ui/Badge';
-import { cn, formatCurrency, formatRelative, getImageUrl } from '../lib/utils';
+import { ReceiptPrinterOverlay } from '../components/receipt/ReceiptPrinterOverlay';
+import { formatCurrency, formatRelative, getImageUrl } from '../lib/utils';
 import { businessPaymentMethods, PAYMENT_METHOD_OPTIONS } from '../lib/payments';
 import { ProfitAmount } from '../components/ui/ProfitAmount';
 import { saleApi } from '../api';
-import { useBusinessStore } from '../stores';
+import { useBusinessStore, usePremium } from '../stores';
 import type { Sale } from '../types';
 
 type DatePreset = 'all' | 'today' | 'week' | 'month' | 'custom';
@@ -69,12 +70,16 @@ function saleThumbnail(sale: Sale) {
 }
 
 export default function SalesPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isPremium = usePremium();
   const { activeBusiness } = useBusinessStore();
   const [preset, setPreset] = useState<DatePreset>('all');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [payment, setPayment] = useState('');
   const [search, setSearch] = useState('');
+  const [printReceiptId, setPrintReceiptId] = useState<string | null>(null);
   const deferredSearch = useDeferredValue(search.trim());
   const range = useMemo(() => dateRange(preset, from, to), [preset, from, to]);
   const allowedPayments = businessPaymentMethods(activeBusiness?.paymentMethods);
@@ -84,6 +89,13 @@ export default function SalesPage() {
   ];
   const paymentFilter = allowedPayments.includes(payment as typeof allowedPayments[number]) ? payment : '';
   const filtersActive = preset !== 'all' || !!paymentFilter || !!search.trim();
+
+  useEffect(() => {
+    const state = location.state as { printReceiptId?: string } | null;
+    if (!state?.printReceiptId || !isPremium) return;
+    setPrintReceiptId(state.printReceiptId);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [isPremium, location.pathname, location.state, navigate]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['sales', activeBusiness?.id, range.startDate, range.endDate, paymentFilter, deferredSearch],
@@ -118,30 +130,30 @@ export default function SalesPage() {
         action={<Button to="/sales/new" size="sm"><Plus size={18} /> New Sale</Button>}
       />
 
-      <div className="surface-card space-y-1.5 p-1.5">
-        <div className="flex items-center gap-1">
-          <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto scrollbar-hide">
-            {DATE_FILTERS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setPreset(opt.value)}
-                className={cn(
-                  'shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold',
-                  preset === opt.value
-                    ? 'bg-primary-600 text-white'
-                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
+      <div className="space-y-3">
+        {isPremium && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button to="/lists/scan?kind=SALE" variant="secondary" size="sm">
+              <Camera size={15} /> Scan list
+            </Button>
+            <Button to="/customers" variant="secondary" size="sm">
+              <Users size={15} /> Customers
+            </Button>
           </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          <FilterTabs
+            options={DATE_FILTERS}
+            value={preset}
+            onChange={setPreset}
+            className="min-w-0 flex-1"
+          />
           {filtersActive && (
             <button
               type="button"
               onClick={clearFilters}
-              className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              className="shrink-0 rounded-full px-2.5 py-1.5 text-caption font-semibold text-slate-500 hover:bg-white hover:text-slate-800 dark:hover:bg-slate-900 dark:hover:text-slate-200"
             >
               Clear
             </button>
@@ -149,50 +161,46 @@ export default function SalesPage() {
         </div>
 
         {preset === 'custom' && (
-          <div className="flex items-center gap-1.5 px-0.5">
+          <div className="flex items-center gap-2">
             <input
               type="date"
               aria-label="From"
               value={from}
               max={to || undefined}
               onChange={(e) => setFrom(e.target.value)}
-              className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              className="surface-input h-11 min-w-0 flex-1 px-3 text-body text-slate-900 dark:text-slate-100"
             />
-            <span className="text-xs text-slate-400">to</span>
+            <span className="text-caption text-slate-400">to</span>
             <input
               type="date"
               aria-label="To"
               value={to}
               min={from || undefined}
               onChange={(e) => setTo(e.target.value)}
-              className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+              className="surface-input h-11 min-w-0 flex-1 px-3 text-body text-slate-900 dark:text-slate-100"
             />
           </div>
         )}
 
-        <div className="flex gap-1.5">
-          <label className="flex min-w-0 flex-1 items-center rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
-            <Search size={14} className="ml-2.5 shrink-0 text-slate-400" />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search items"
-              className="h-9 min-w-0 flex-1 bg-transparent px-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100"
-            />
-          </label>
+        <div className="flex items-stretch gap-2">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search items"
+            className="min-w-0"
+          />
           <div className="relative shrink-0">
             <select
               aria-label="Payment method"
               value={paymentFilter}
               onChange={(e) => setPayment(e.target.value)}
-              className="h-9 appearance-none rounded-lg border border-slate-200 bg-slate-50 pl-2.5 pr-7 text-sm text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              className="surface-input h-full min-h-[44px] appearance-none pl-3 pr-8 text-body text-slate-700 outline-none dark:text-slate-200"
             >
               {paymentOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-            <ChevronDown size={14} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400" />
+            <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
           </div>
         </div>
       </div>
@@ -227,6 +235,13 @@ export default function SalesPage() {
             );
           })}
         </div>
+      )}
+
+      {printReceiptId && (
+        <ReceiptPrinterOverlay
+          saleId={printReceiptId}
+          onClose={() => setPrintReceiptId(null)}
+        />
       )}
     </div>
   );

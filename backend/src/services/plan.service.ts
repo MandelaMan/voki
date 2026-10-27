@@ -34,6 +34,11 @@ export const PREMIUM_FEATURES = [
     name: 'Restock suggestions',
     description: 'See which items will run out if they keep selling at the recent pace.',
   },
+  {
+    id: 'list_ocr',
+    name: 'Scan handwritten lists',
+    description: 'Photograph a sales or restock list and Voki fills the items for you to review.',
+  },
 ] as const;
 
 export function premiumActive(user: { plan: PlanTier; planExpiresAt: Date | null }) {
